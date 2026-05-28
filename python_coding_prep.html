@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Python Coding Round — Abhay Lunkad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a0c10;
+  --bg2:#0f1218;
+  --panel:#151a22;
+  --panel2:#1c2330;
+  --line:#1e2535;
+  --line2:#2a3347;
+  --ink:#e2e8f0;
+  --muted:#7a8a9e;
+  --faint:#3d4f68;
+  --green:#3dffa0;
+  --green-d:rgba(61,255,160,0.12);
+  --cyan:#38d9f5;
+  --cyan-d:rgba(56,217,245,0.12);
+  --amber:#f5c842;
+  --amber-d:rgba(245,200,66,0.12);
+  --red:#ff5c7a;
+  --red-d:rgba(255,92,122,0.12);
+  --purple:#b07cff;
+  --purple-d:rgba(176,124,255,0.12);
+  --display:'Syne',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --mono:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.65;min-height:100vh}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:290px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.side{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--line);padding:0 0 60px;scrollbar-width:thin;scrollbar-color:var(--faint) transparent}
+.brand{padding:24px 20px 16px;border-bottom:1px solid var(--line)}
+.brand h1{font-family:var(--display);font-size:17px;font-weight:800;color:var(--green);letter-spacing:-.01em;line-height:1.2}
+.brand .sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:5px;letter-spacing:.08em;text-transform:uppercase}
+.brand .who{font-size:11px;color:var(--faint);margin-top:6px;line-height:1.4}
+
+/* progress */
+.progwrap{padding:14px 20px 10px}
+.progbar{height:3px;background:var(--panel);border-radius:99px;overflow:hidden}
+.progfill{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:99px;width:0%;transition:.4s ease}
+.progtxt{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+
+/* search */
+.navsearch{padding:8px 16px 4px}
+.navsearch input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:11px;outline:none}
+.navsearch input:focus{border-color:var(--green)}
+
+/* nav items */
+.navgrp{margin:8px 0 2px}
+.navgrplbl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;padding:8px 20px 3px;display:block}
+.navitem{display:block;padding:7px 20px;color:var(--muted);font-size:12.5px;border-left:2px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono)}
+.navitem:hover{background:var(--panel);color:var(--ink)}
+.navitem.active{background:linear-gradient(90deg,var(--green-d),transparent);color:var(--green);border-left-color:var(--green)}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:13px 32px;background:rgba(10,12,16,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.crumb{font-family:var(--display);font-size:16px;font-weight:700;flex:1;color:var(--ink)}
+.modes{display:flex;gap:6px}
+.mbtn{background:var(--panel);border:1px solid var(--line2);color:var(--muted);font-family:var(--mono);font-size:10px;padding:6px 14px;border-radius:6px;cursor:pointer;letter-spacing:.04em;transition:.15s}
+.mbtn:hover,.mbtn.active{background:var(--green-d);border-color:var(--green);color:var(--green)}
+.mobnav{display:none}
+.wrap{padding:32px;max-width:1000px}
+
+/* ── CARDS ── */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 32px;margin-bottom:24px}
+.card h2{font-family:var(--display);font-size:22px;font-weight:800;margin-bottom:16px;color:var(--ink)}
+.card h3{font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:10px}
+.concept{line-height:1.75}
+.concept p{margin-bottom:12px;color:var(--muted)}
+.concept p strong,.concept li strong{color:var(--ink)}
+.concept ul,.concept ol{margin:8px 0 14px 20px;color:var(--muted)}
+.concept li{margin-bottom:6px}
+.concept code{font-family:var(--mono);font-size:12px;background:var(--panel2);color:var(--cyan);padding:2px 6px;border-radius:4px}
+
+/* ── CODE BLOCKS ── */
+pre{background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:20px 22px;margin:14px 0;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.7;position:relative}
+pre .lang-tag{position:absolute;top:8px;right:12px;font-size:9px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+.c{color:var(--faint)} /* comment */
+.k{color:var(--purple)} /* keyword */
+.s{color:var(--green)} /* string */
+.n{color:var(--cyan)} /* function/class name */
+.num{color:var(--amber)} /* number */
+.d{color:var(--ink)} /* default */
+
+/* ── DIFFICULTY BADGES ── */
+.lvl{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:5px;white-space:nowrap}
+.easy{background:var(--green-d);color:var(--green);border:1px solid rgba(61,255,160,.25)}
+.medium{background:var(--amber-d);color:var(--amber);border:1px solid rgba(245,200,66,.25)}
+.hard{background:var(--red-d);color:var(--red);border:1px solid rgba(255,92,122,.25)}
+.platform{background:var(--cyan-d);color:var(--cyan);border:1px solid rgba(56,217,245,.25)}
+.system{background:var(--purple-d);color:var(--purple);border:1px solid rgba(176,124,255,.25)}
+
+/* ── QUESTIONS ── */
+.q{border:1px solid var(--line);border-radius:12px;margin:12px 0;background:var(--bg2);overflow:hidden;transition:.2s}
+.q.open{border-color:var(--line2)}
+.q.open .qbody{display:block}
+.qhead{display:flex;align-items:flex-start;gap:12px;padding:15px 18px;cursor:pointer;user-select:none}
+.qhead:hover{background:var(--panel)}
+.qtext{flex:1;font-size:14px;color:var(--ink);line-height:1.5}
+.qtoggle{font-size:12px;color:var(--faint);padding-top:2px;transition:.2s}
+.qbody{display:none;padding:0 20px 20px;border-top:1px solid var(--line)}
+
+/* reveal */
+.reveal-prompt{padding:16px 0 8px}
+.reveal-btn{background:var(--panel);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;padding:9px 20px;border-radius:8px;cursor:pointer;letter-spacing:.04em;transition:.15s}
+.reveal-btn:hover{background:var(--green-d)}
+
+/* answer sections */
+.ans-block{margin-top:10px}
+.albl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);display:block;margin-bottom:8px}
+.top1{background:linear-gradient(135deg,rgba(176,124,255,.08),rgba(56,217,245,.06));border:1px solid rgba(176,124,255,.2);border-radius:10px;padding:14px 18px;margin-top:14px;font-size:13.5px;color:var(--ink)}
+.top1 strong{color:var(--purple)}
+.followups{background:var(--panel2);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
+.followups ul{margin:6px 0 0 16px}
+.followups li{margin-bottom:4px}
+.pitfalls{background:linear-gradient(135deg,rgba(255,92,122,.07),transparent);border:1px solid rgba(255,92,122,.2);border-radius:10px;padding:14px 18px;margin-top:12px;font-size:13px;color:var(--muted)}
+.pitfalls strong{color:var(--red)}
+.selfrate{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.selfrate span{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.rate{border:none;font-family:var(--mono);font-size:10px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:.15s}
+.sel-good{background:var(--green-d);color:var(--green)}
+.sel-mid{background:var(--amber-d);color:var(--amber)}
+.sel-bad{background:var(--red-d);color:var(--red)}
+
+/* ── FILTER CHIPS ── */
+.qfilter{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 8px}
+.qchip{background:var(--panel);border:1px solid var(--line2);color:var(--muted);font-family:var(--mono);font-size:10px;padding:5px 13px;border-radius:20px;cursor:pointer;transition:.15s}
+.qchip:hover{border-color:var(--green);color:var(--green)}
+.qchip.active{background:var(--green-d);border-color:var(--green);color:var(--green)}
+
+/* ── MINI CARDS ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.minicard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.minicard h4{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.minicard.mistakes h4{color:var(--red)}
+.minicard.best h4{color:var(--green)}
+.minicard.patterns h4{color:var(--cyan)}
+.minicard.complexity h4{color:var(--purple)}
+.minicard ul{margin-left:16px;font-size:12.5px;color:var(--muted)}
+.minicard li{margin-bottom:5px}
+
+/* ── FLASH ── */
+.flash{display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+.fcard{width:100%;max-width:600px;min-height:200px;background:var(--panel);border:1px solid var(--line2);border-radius:16px;display:flex;align-items:center;justify-content:center;padding:32px;cursor:pointer;transition:.3s;position:relative;text-align:center}
+.fcard:hover{border-color:var(--green);background:var(--panel2)}
+.ffront p{font-family:var(--display);font-size:20px;font-weight:700;color:var(--ink)}
+.fback{display:none}
+.fback p{font-family:var(--mono);font-size:13px;color:var(--green);line-height:1.7}
+.fcard.flipped .ffront{display:none}
+.fcard.flipped .fback{display:block}
+.ffront small{font-family:var(--mono);font-size:10px;color:var(--faint);display:block;margin-top:12px}
+.fctrl{display:flex;justify-content:center;gap:14px;align-items:center;margin-top:20px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.bigbtn{background:var(--panel);border:1px solid var(--line2);color:var(--muted);font-family:var(--mono);font-size:11px;padding:10px 22px;border-radius:8px;cursor:pointer;transition:.15s}
+.bigbtn:hover{border-color:var(--green);color:var(--green)}
+
+/* ── COMPLEXITY TABLE ── */
+.ctable{width:100%;border-collapse:collapse;margin:14px 0;font-family:var(--mono);font-size:12px}
+.ctable th{text-align:left;color:var(--faint);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-bottom:1px solid var(--line)}
+.ctable td{padding:7px 12px;border-bottom:1px solid var(--line);color:var(--muted)}
+.ctable td:first-child{color:var(--ink)}
+.ctable .good{color:var(--green)}
+.ctable .mid{color:var(--amber)}
+.ctable .bad{color:var(--red)}
+
+/* ── MOCK ── */
+.mock-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 32px;max-width:780px}
+.mock-q{font-family:var(--display);font-size:19px;font-weight:700;line-height:1.45;margin:14px 0 20px;color:var(--ink)}
+.mock-meta{font-family:var(--mono);font-size:10px;color:var(--faint);margin-bottom:4px}
+
+/* ── MOBILE ── */
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{display:none;position:fixed;z-index:50;width:280px;height:100vh}
+  .side.open{display:block}
+  .mobnav{display:inline-flex}
+  .wrap{padding:20px 16px 80px}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <h1>⌨ Python Coding Round</h1>
+      <div class="sub">Abhay Lunkad · Senior MLOps / AI Platform</div>
+      <div class="who">Algorithms · boto3 · async · LLM APIs · platform scripts</div>
+    </div>
+    <div class="progwrap">
+      <div class="progbar"><div class="progfill" id="progfill"></div></div>
+      <div class="progtxt"><span id="progcount">0/0 done</span><span id="progpct">0%</span></div>
+    </div>
+    <div class="navsearch"><input id="navsearch" placeholder="search topics…" autocomplete="off"/></div>
+    <nav id="nav"></nav>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <button class="mbtn mobnav" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+      <div class="crumb" id="crumb">Loading…</div>
+      <div class="modes">
+        <button class="mbtn active" id="mode-study" onclick="setMode('study')">Study</button>
+        <button class="mbtn" id="mode-mock" onclick="setMode('mock')">Mock</button>
+        <button class="mbtn" id="mode-flash" onclick="setMode('flash')">Flash</button>
+      </div>
+    </div>
+    <div class="wrap" id="view"></div>
+  </main>
+</div>
+<script>
+const TOPICS = [
+{id:"python-core",name:"Python Core & Internals",ix:1,group:"Foundations",
+ concept:`<p>Senior Python interviews probe the <strong>why</strong> behind the language, not just syntax. Know the data model, mutability, memory management, and the GIL — concepts that directly affect your platform scripts and async workloads.</p>
+ <ul>
+ <li><strong>Mutable vs Immutable</strong>: lists/dicts/sets are mutable (modified in place); tuples/strings/ints are immutable. Default mutable arguments are a classic trap.</li>
+ <li><strong>is vs ==</strong>: <code>is</code> checks identity (same object in memory); <code>==</code> checks equality. Small integers (-5 to 256) and interned strings are cached — don't rely on <code>is</code> for value comparison.</li>
+ <li><strong>GIL (Global Interpreter Lock)</strong>: CPython allows only one thread to execute Python bytecode at a time. Threading helps for I/O-bound work (network, disk); multiprocessing bypasses GIL for CPU-bound work.</li>
+ <li><strong>Memory model</strong>: everything is an object with a reference count. <code>gc</code> module handles reference cycles. <code>__slots__</code> reduces per-instance memory for large-scale objects.</li>
+ <li><strong>Dunder methods</strong>: <code>__enter__/__exit__</code> (context managers), <code>__iter__/__next__</code> (iterators), <code>__call__</code> (callable objects) — all used in platform tooling.</li>
+ </ul>`,
+ questions:[
+  {level:"easy",q:"What is the mutable default argument trap? Write an example and fix it.",
+   code:`<pre><span class="c"># BUG — list is created once at function definition time</span>
+<span class="k">def</span> <span class="n">append_item</span>(item, result=[]):
+    result.append(item)
+    <span class="k">return</span> result
+
+<span class="n">append_item</span>(<span class="num">1</span>)  <span class="c"># [1]</span>
+<span class="n">append_item</span>(<span class="num">2</span>)  <span class="c"># [1, 2]  ← WRONG, same list reused</span>
+
+<span class="c"># FIX — use None as sentinel</span>
+<span class="k">def</span> <span class="n">append_item</span>(item, result=<span class="k">None</span>):
+    <span class="k">if</span> result <span class="k">is</span> <span class="k">None</span>:
+        result = []
+    result.append(item)
+    <span class="k">return</span> result</pre>`,
+   a:"Default arguments are evaluated once at function definition, not on each call. A mutable default (list, dict) is shared across all calls. Fix: use <code>None</code> as the default and create the mutable object inside the function body.",
+   top1:"They immediately explain WHY — the default is evaluated at definition time, not call time — and apply the same fix to dict and set defaults. They name the pattern ('None-sentinel') and note it's one of the first things senior interviewers use to filter for Python depth.",
+   pitfall:"Thinking this only affects lists — any mutable object (dict, set, custom class) has the same trap.",
+   followups:["What other mutable defaults cause this?","How does this relate to class-level vs instance-level attributes?"]},
+  {level:"medium",q:"Implement a context manager for temporary AWS credential assumption using __enter__/__exit__.",
+   code:`<pre><span class="k">import</span> boto3
+<span class="k">from</span> contextlib <span class="k">import</span> contextmanager
+
+<span class="k">class</span> <span class="n">AssumedRole</span>:
+    <span class="k">def</span> <span class="n">__init__</span>(self, role_arn: str, session_name: str = <span class="s">"session"</span>):
+        self.role_arn = role_arn
+        self.session_name = session_name
+        self.session = <span class="k">None</span>
+
+    <span class="k">def</span> <span class="n">__enter__</span>(self):
+        sts = boto3.client(<span class="s">"sts"</span>)
+        creds = sts.assume_role(
+            RoleArn=self.role_arn,
+            RoleSessionName=self.session_name
+        )[<span class="s">"Credentials"</span>]
+        self.session = boto3.Session(
+            aws_access_key_id=creds[<span class="s">"AccessKeyId"</span>],
+            aws_secret_access_key=creds[<span class="s">"SecretAccessKey"</span>],
+            aws_session_token=creds[<span class="s">"SessionToken"</span>]
+        )
+        <span class="k">return</span> self.session
+
+    <span class="k">def</span> <span class="n">__exit__</span>(self, exc_type, exc_val, exc_tb):
+        self.session = <span class="k">None</span>
+        <span class="k">return</span> <span class="k">False</span>  <span class="c"># don't suppress exceptions</span>
+
+<span class="c"># Usage</span>
+<span class="k">with</span> <span class="n">AssumedRole</span>(<span class="s">"arn:aws:iam::123456789:role/CrossAccountRole"</span>) <span class="k">as</span> session:
+    ec2 = session.client(<span class="s">"ec2"</span>, region_name=<span class="s">"us-east-1"</span>)
+    instances = ec2.describe_instances()</pre>`,
+   a:"Implement <code>__enter__</code> (acquire resource, return it) and <code>__exit__</code> (release resource, return False to propagate exceptions). For credential management, <code>__exit__</code> nulls out the session so creds aren't held longer than needed. Returning False from <code>__exit__</code> means exceptions are NOT suppressed — critical for error handling.",
+   top1:"They return False explicitly from __exit__ and explain it means 'don't suppress exceptions' — showing they understand the protocol. They also mention the @contextmanager decorator as an alternative (generator-based, more concise) and note that __exit__ receiving exc_type=None means the block completed cleanly.",
+   pitfall:"Returning True from __exit__ silently swallows all exceptions — a dangerous default if you forget it.",
+   followups:["How does @contextmanager differ from the class-based approach?","How would you add retry logic on AssumeRole failures?"]},
+  {level:"medium",q:"What's the difference between __repr__ and __str__? When does each get called?",
+   code:`<pre><span class="k">class</span> <span class="n">EC2Instance</span>:
+    <span class="k">def</span> <span class="n">__init__</span>(self, instance_id, state):
+        self.instance_id = instance_id
+        self.state = state
+
+    <span class="k">def</span> <span class="n">__repr__</span>(self):
+        <span class="c"># Unambiguous — should ideally recreate the object</span>
+        <span class="k">return</span> <span class="s">f"EC2Instance(instance_id={self.instance_id!r}, state={self.state!r})"</span>
+
+    <span class="k">def</span> <span class="n">__str__</span>(self):
+        <span class="c"># Human-readable</span>
+        <span class="k">return</span> <span class="s">f"Instance {self.instance_id} ({self.state})"</span>
+
+i = <span class="n">EC2Instance</span>(<span class="s">"i-0abc"</span>, <span class="s">"running"</span>)
+<span class="n">print</span>(i)           <span class="c"># calls __str__  → "Instance i-0abc (running)"</span>
+<span class="n">repr</span>(i)            <span class="c"># calls __repr__ → "EC2Instance(instance_id='i-0abc', state='running')"</span>
+[i]                <span class="c"># list uses __repr__ for elements</span></pre>`,
+   a:"<code>__str__</code>: human-readable, called by print() and str(). <code>__repr__</code>: unambiguous, called by repr(), in containers (lists, dicts), and in the REPL. If only __repr__ is defined it serves as fallback for both. Goal: __repr__ output should ideally be evaluable Python to recreate the object.",
+   top1:"They note that __repr__ is the one you must define (it's the fallback), and they use the !r modifier in f-strings (which calls repr on the value, adding quotes around strings) — a subtle detail that shows real Python fluency.",
+   pitfall:"Defining only __str__ means containers (lists, dicts) show unhelpful output like <__main__.EC2Instance object at 0x...> for the elements.",
+   followups:["What does the !r modifier do in an f-string?","When would you define __format__ too?"]}
+ ],
+ mistakes:["Mutable default arguments","Using is to compare values (not identity)","Assuming threads speed up CPU-bound work (GIL prevents it)","Not defining __repr__ — __str__ alone is insufficient for debugging","Modifying a list while iterating over it"],
+ patterns:["None-sentinel for mutable defaults","@contextmanager for simple context managers","__slots__ for memory-efficient data classes","Dataclasses for clean data containers"],
+ complexity:[]
+},
+{id:"decorators-generators",name:"Decorators & Generators",ix:2,group:"Foundations",
+ concept:`<p>Decorators and generators are the two Python features that separate intermediate from advanced engineers. In platform/MLOps work they appear constantly: retry decorators, caching, log wrappers, and lazy data pipelines over large CloudWatch log streams.</p>
+ <ul>
+ <li><strong>Decorator</strong>: a function that takes a function and returns a modified version. Under the hood: <code>@decorator</code> is syntactic sugar for <code>func = decorator(func)</code>.</li>
+ <li><strong>functools.wraps</strong>: preserves the original function's <code>__name__</code>, <code>__doc__</code>, etc. — always use it in decorators.</li>
+ <li><strong>Generator</strong>: a function with <code>yield</code> — suspends execution and returns a value, resuming on next(). Memory-efficient for large sequences (stream log lines, paginate API results).</li>
+ <li><strong>Generator expressions</strong>: <code>(x*2 for x in range(1000000))</code> — lazy, unlike list comprehensions.</li>
+ <li><strong>send() and two-way generators</strong>: generators can receive values via <code>.send(val)</code> — used in coroutine patterns (pre-asyncio).</li>
+ </ul>`,
+ questions:[
+  {level:"medium",q:"Write a retry decorator with exponential backoff for AWS API calls.",
+   code:`<pre><span class="k">import</span> time, functools, random
+<span class="k">from</span> botocore.exceptions <span class="k">import</span> ClientError
+
+<span class="k">def</span> <span class="n">retry</span>(max_attempts=<span class="num">3</span>, base_delay=<span class="num">1.0</span>, backoff=<span class="num">2.0</span>,
+          exceptions=(ClientError,)):
+    <span class="k">def</span> <span class="n">decorator</span>(func):
+        @functools.wraps(func)
+        <span class="k">def</span> <span class="n">wrapper</span>(*args, **kwargs):
+            delay = base_delay
+            <span class="k">for</span> attempt <span class="k">in</span> range(max_attempts):
+                <span class="k">try</span>:
+                    <span class="k">return</span> func(*args, **kwargs)
+                <span class="k">except</span> exceptions <span class="k">as</span> e:
+                    <span class="k">if</span> attempt == max_attempts - <span class="num">1</span>:
+                        <span class="k">raise</span>
+                    jitter = random.uniform(<span class="num">0</span>, delay * <span class="num">0.2</span>)
+                    time.sleep(delay + jitter)
+                    delay *= backoff
+        <span class="k">return</span> wrapper
+    <span class="k">return</span> decorator
+
+@<span class="n">retry</span>(max_attempts=<span class="num">4</span>, base_delay=<span class="num">0.5</span>)
+<span class="k">def</span> <span class="n">describe_instances</span>(ec2_client, **filters):
+    <span class="k">return</span> ec2_client.describe_instances(**filters)</pre>`,
+   a:"Three-layer function: outer (captures config), decorator (wraps func), wrapper (adds retry logic). Key details: <code>functools.wraps</code> preserves metadata; jitter prevents thundering herd; re-raise on final attempt; catch only specific exceptions.",
+   top1:"They add jitter (prevents thundering herd when many clients retry simultaneously), re-raise on the last attempt so the caller sees the real error, and only catch specified exceptions so programming errors (TypeError, AttributeError) propagate immediately. They note that tenacity library does this in production but knowing the implementation shows depth.",
+   pitfall:"Not using @functools.wraps — the wrapped function loses its name and docstring, breaking introspection and logging.",
+   followups:["How would you make this async-compatible?","How would you add a circuit breaker on top of retry?"]},
+  {level:"medium",q:"Write a generator that paginates AWS describe_instances across all pages lazily.",
+   code:`<pre><span class="k">import</span> boto3
+<span class="k">from</span> typing <span class="k">import</span> Iterator, Dict, Any
+
+<span class="k">def</span> <span class="n">paginate_instances</span>(
+    ec2_client,
+    filters: list = <span class="k">None</span>
+) -> Iterator[Dict[str, Any]]:
+    <span class="s">"""Yield one EC2 instance dict at a time across all pages."""</span>
+    kwargs = {}
+    <span class="k">if</span> filters:
+        kwargs[<span class="s">"Filters"</span>] = filters
+
+    paginator = ec2_client.get_paginator(<span class="s">"describe_instances"</span>)
+    <span class="k">for</span> page <span class="k">in</span> paginator.paginate(**kwargs):
+        <span class="k">for</span> reservation <span class="k">in</span> page[<span class="s">"Reservations"</span>]:
+            <span class="k">for</span> instance <span class="k">in</span> reservation[<span class="s">"Instances"</span>]:
+                <span class="k">yield</span> instance
+
+<span class="c"># Usage — memory-efficient, processes one instance at a time</span>
+ec2 = boto3.client(<span class="s">"ec2"</span>)
+<span class="k">for</span> inst <span class="k">in</span> <span class="n">paginate_instances</span>(ec2, filters=[{<span class="s">"Name"</span>: <span class="s">"instance-state-name"</span>, <span class="s">"Values"</span>: [<span class="s">"running"</span>]}]):
+    <span class="n">print</span>(inst[<span class="s">"InstanceId"</span>], inst[<span class="s">"InstanceType"</span>])</pre>`,
+   a:"Use boto3's built-in paginator to handle NextToken automatically, then yield individual instances. The generator only holds one page in memory at a time — critical when iterating thousands of instances across 50+ accounts.",
+   top1:"They use boto3's paginator (not manual NextToken loops) and yield at the innermost level so the caller can break early without fetching unnecessary pages. They type-annotate with Iterator[Dict] showing production-code habits. For multi-account, they'd wrap this with AssumedRole context manager per account.",
+   pitfall:"Loading all pages into a list before processing — fine for 10 instances, OOM for 50,000 across a large AWS org.",
+   followups:["How would you parallelize this across 50 accounts?","How do you handle ThrottlingException inside the generator?"]},
+  {level:"hard",q:"Write a class-based decorator that caches function results with a TTL (time-to-live).",
+   code:`<pre><span class="k">import</span> time, functools
+<span class="k">from</span> typing <span class="k">import</span> Any, Callable
+
+<span class="k">class</span> <span class="n">ttl_cache</span>:
+    <span class="s">"""Decorator class that caches results for ttl_seconds."""</span>
+    <span class="k">def</span> <span class="n">__init__</span>(self, ttl_seconds: float = <span class="num">60</span>):
+        self.ttl = ttl_seconds
+        self._cache: dict = {}
+        self._timestamps: dict = {}
+
+    <span class="k">def</span> <span class="n">__call__</span>(self, func: Callable) -> Callable:
+        @functools.wraps(func)
+        <span class="k">def</span> <span class="n">wrapper</span>(*args, **kwargs):
+            key = (args, tuple(sorted(kwargs.items())))
+            now = time.monotonic()
+            <span class="k">if</span> (key <span class="k">in</span> self._cache <span class="k">and</span>
+                    now - self._timestamps[key] < self.ttl):
+                <span class="k">return</span> self._cache[key]
+            result = func(*args, **kwargs)
+            self._cache[key] = result
+            self._timestamps[key] = now
+            <span class="k">return</span> result
+        wrapper.cache_clear = <span class="k">lambda</span>: (
+            self._cache.clear(), self._timestamps.clear()
+        )
+        <span class="k">return</span> wrapper
+
+@<span class="n">ttl_cache</span>(ttl_seconds=<span class="num">300</span>)
+<span class="k">def</span> <span class="n">get_account_instances</span>(account_id: str) -> list:
+    <span class="c"># Expensive cross-account API call, cached 5 min</span>
+    ...</pre>`,
+   a:"A class-based decorator implements __call__ to make instances callable. Cache key includes both positional and keyword args (sorted for consistency). time.monotonic() is preferred over time.time() for elapsed time (immune to clock adjustments). Adding cache_clear() mirrors functools.lru_cache's API.",
+   top1:"They use time.monotonic() (not time.time()) for measuring elapsed durations — a subtle correctness detail. They expose cache_clear() for testing and make the cache key include sorted kwargs so cache(a=1,b=2) and cache(b=2,a=1) hit the same entry. They'd mention thread-safety as the next concern: the dict operations aren't atomic, so a threading.Lock would be needed in concurrent scenarios.",
+   pitfall:"Using time.time() for TTL — it can go backwards (NTP sync, DST). time.monotonic() always increases.",
+   followups:["How would you add thread-safety to this cache?","How does this compare to functools.lru_cache?"]}
+ ],
+ mistakes:["Forgetting @functools.wraps — breaks introspection, logging, and pytest","Catching bare Exception in retry — masks programming errors","Building full list instead of using a generator for large data","Not adding jitter to retry backoff — causes thundering herd"],
+ patterns:["Three-layer decorator (config → decorator → wrapper)","Generator + paginator for memory-efficient AWS pagination","Class-based decorator for stateful decorating","functools.wraps always"],
+ complexity:[]
+},
+{id:"async-python",name:"Async Python & Concurrency",ix:3,group:"Foundations",
+ concept:`<p>Async Python is essential for platform engineers calling many AWS APIs, Bedrock endpoints, and HTTP services concurrently. The asyncio event loop, async/await, and concurrent execution patterns directly apply to your cross-account agent tooling.</p>
+ <ul>
+ <li><strong>asyncio event loop</strong>: single-threaded, non-blocking — runs coroutines, switching between them at await points. One thread, many concurrent I/O operations.</li>
+ <li><strong>async def / await</strong>: <code>async def</code> defines a coroutine; <code>await</code> suspends it until the awaited thing completes. You can only await inside an async function.</li>
+ <li><strong>asyncio.gather()</strong>: runs multiple coroutines concurrently, returns results in order.</li>
+ <li><strong>asyncio.Semaphore</strong>: limit concurrent coroutines — critical to avoid rate-limit explosions on AWS APIs.</li>
+ <li><strong>Blocking code in async</strong>: calling blocking functions (requests, boto3 sync) inside an async function blocks the entire event loop. Use <code>loop.run_in_executor()</code> or aioboto3.</li>
+ <li><strong>Threading vs Multiprocessing vs Async</strong>: Async wins for I/O-bound with many connections. Threading works for I/O-bound with blocking libs. Multiprocessing for CPU-bound (bypasses GIL).</li>
+ </ul>`,
+ questions:[
+  {level:"medium",q:"Fetch CloudWatch metrics for 50 EC2 instances concurrently with a rate limiter.",
+   code:`<pre><span class="k">import</span> asyncio, aioboto3
+<span class="k">from</span> typing <span class="k">import</span> List, Dict
+
+<span class="k">async def</span> <span class="n">fetch_cpu_metric</span>(
+    session, instance_id: str, sem: asyncio.Semaphore
+) -> Dict:
+    <span class="k">async with</span> sem:  <span class="c"># max N concurrent calls</span>
+        <span class="k">async with</span> session.client(<span class="s">"cloudwatch"</span>) <span class="k">as</span> cw:
+            resp = <span class="k">await</span> cw.get_metric_statistics(
+                Namespace=<span class="s">"AWS/EC2"</span>,
+                MetricName=<span class="s">"CPUUtilization"</span>,
+                Dimensions=[{<span class="s">"Name"</span>: <span class="s">"InstanceId"</span>, <span class="s">"Value"</span>: instance_id}],
+                Period=<span class="num">3600</span>, Statistics=[<span class="s">"Average"</span>],
+                StartTime=<span class="s">"..."</span>, EndTime=<span class="s">"..."</span>
+            )
+        avg = (<span class="n">sum</span>(p[<span class="s">"Average"</span>] <span class="k">for</span> p <span class="k">in</span> resp[<span class="s">"Datapoints"</span>])
+               / <span class="n">len</span>(resp[<span class="s">"Datapoints"</span>])) <span class="k">if</span> resp[<span class="s">"Datapoints"</span>] <span class="k">else</span> <span class="num">0</span>
+        <span class="k">return</span> {<span class="s">"instance_id"</span>: instance_id, <span class="s">"avg_cpu"</span>: avg}
+
+<span class="k">async def</span> <span class="n">fetch_all_metrics</span>(instance_ids: List[str]) -> List[Dict]:
+    sem = asyncio.Semaphore(<span class="num">10</span>)  <span class="c"># max 10 concurrent API calls</span>
+    <span class="k">async with</span> aioboto3.Session().client(<span class="s">"cloudwatch"</span>):
+        session = aioboto3.Session()
+    tasks = [<span class="n">fetch_cpu_metric</span>(session, iid, sem) <span class="k">for</span> iid <span class="k">in</span> instance_ids]
+    <span class="k">return await</span> asyncio.gather(*tasks, return_exceptions=<span class="k">True</span>)
+
+<span class="c"># Run</span>
+results = asyncio.run(<span class="n">fetch_all_metrics</span>(instance_ids))</pre>`,
+   a:"asyncio.Semaphore limits concurrency (max 10 simultaneous CloudWatch calls). asyncio.gather with return_exceptions=True means one failed call doesn't cancel the others — you get exceptions mixed in results and can handle per-instance. aioboto3 gives async boto3 clients.",
+   top1:"They use return_exceptions=True in gather — critical for bulk operations where one failure shouldn't abort the rest. They separate the semaphore from the task logic cleanly, and they'd mention that in production you'd filter results for exceptions and retry or log them separately rather than crashing on the first API error.",
+   pitfall:"Using requests or sync boto3 inside async — blocks the event loop, serializing all calls and defeating the purpose.",
+   followups:["What happens if you don't use return_exceptions=True in gather?","How would you handle exceptions in the results list?"]},
+  {level:"hard",q:"Write an async rate-limited task queue that processes jobs with a max RPS (requests per second).",
+   code:`<pre><span class="k">import</span> asyncio, time
+<span class="k">from</span> collections <span class="k">import</span> deque
+<span class="k">from</span> typing <span class="k">import</span> Callable, Any
+
+<span class="k">class</span> <span class="n">RateLimiter</span>:
+    <span class="s">"""Token-bucket rate limiter for async functions."""</span>
+    <span class="k">def</span> <span class="n">__init__</span>(self, rps: float):
+        self.rps = rps
+        self.min_interval = <span class="num">1.0</span> / rps
+        self._last_called = <span class="num">0.0</span>
+        self._lock = asyncio.Lock()
+
+    <span class="k">async def</span> <span class="n">acquire</span>(self):
+        <span class="k">async with</span> self._lock:
+            now = time.monotonic()
+            wait = self.min_interval - (now - self._last_called)
+            <span class="k">if</span> wait > <span class="num">0</span>:
+                <span class="k">await</span> asyncio.sleep(wait)
+            self._last_called = time.monotonic()
+
+<span class="k">async def</span> <span class="n">call_bedrock</span>(limiter: <span class="n">RateLimiter</span>, prompt: str) -> str:
+    <span class="k">await</span> limiter.acquire()
+    <span class="c"># actual bedrock call here</span>
+    <span class="k">return</span> <span class="s">f"response to: {prompt[:30]}"</span>
+
+<span class="k">async def</span> <span class="n">process_batch</span>(prompts: list, rps: float = <span class="num">5</span>):
+    limiter = <span class="n">RateLimiter</span>(rps)
+    tasks = [<span class="n">call_bedrock</span>(limiter, p) <span class="k">for</span> p <span class="k">in</span> prompts]
+    <span class="k">return await</span> asyncio.gather(*tasks)</pre>`,
+   a:"A token-bucket rate limiter using an asyncio.Lock ensures only one coroutine checks/updates the last-called time at once. It sleeps the minimum interval between calls. Combined with gather, this achieves exactly the target RPS without per-call complexity.",
+   top1:"They use asyncio.Lock (not threading.Lock) because we're in an async context — threading.Lock would block the event loop. They use time.monotonic() for the interval and set last_called after the sleep (not before) to avoid drift accumulating over many calls. In production they'd mention the aiolimiter library as a battle-tested alternative.",
+   pitfall:"Using threading.Lock inside async code — it blocks the event loop thread, serializing everything.",
+   followups:["How would you implement a sliding-window rate limiter instead?","How does this change for multi-process deployments?"]},
+  {level:"medium",q:"When should you use multiprocessing vs asyncio vs threading for a Python script? Give a concrete platform example for each.",
+   code:`<pre><span class="c"># asyncio: I/O bound, many concurrent network calls</span>
+<span class="c"># → calling Bedrock API for 1000 embeddings concurrently</span>
+<span class="k">async def</span> <span class="n">embed_batch</span>(texts): ...
+
+<span class="c"># threading: I/O bound with blocking libraries (boto3 sync, psycopg2)</span>
+<span class="c"># → when you can't use async and need concurrent DB queries</span>
+<span class="k">from</span> concurrent.futures <span class="k">import</span> ThreadPoolExecutor
+<span class="k">with</span> <span class="n">ThreadPoolExecutor</span>(max_workers=<span class="num">10</span>) <span class="k">as</span> pool:
+    futures = [pool.submit(query_db, account) <span class="k">for</span> account <span class="k">in</span> accounts]
+
+<span class="c"># multiprocessing: CPU bound, bypasses GIL</span>
+<span class="c"># → parsing/transforming huge JSON CloudTrail logs</span>
+<span class="k">from</span> multiprocessing <span class="k">import</span> Pool
+<span class="k">with</span> <span class="n">Pool</span>(processes=<span class="num">8</span>) <span class="k">as</span> pool:
+    results = pool.map(parse_log_file, log_file_paths)</pre>`,
+   a:"<strong>asyncio</strong>: I/O-bound, modern async libraries available, need thousands of concurrent connections. <strong>threading</strong>: I/O-bound but using blocking libraries (sync boto3, psycopg2). <strong>multiprocessing</strong>: CPU-bound work (parsing, transformation) — each process has its own GIL so Python runs truly parallel.",
+   top1:"They name the concrete blocker for threading: the GIL doesn't help with CPU-bound work because only one thread runs Python bytecode at a time. For the platform context they pick log parsing (CPU-bound) as the multiprocessing case and Bedrock API calls (async I/O) for asyncio — real examples, not abstract ones.",
+   pitfall:"Using threading for CPU-bound work — the GIL means threads take turns, so 8 threads can be slower than 1 due to lock contention.",
+   followups:["When would you use ProcessPoolExecutor vs Pool?","How does the GIL affect a C extension (like numpy)?"]}
+ ],
+ mistakes:["Calling sync/blocking functions inside async (blocks event loop)","Using threading.Lock in async code","Not using Semaphore — unbounded concurrency triggers rate limits","Using asyncio for CPU-bound work — single thread, no parallelism","Forgetting return_exceptions=True in gather for bulk operations"],
+ patterns:["Semaphore for bounded concurrency","gather with return_exceptions for bulk resilience","Rate limiter with asyncio.Lock + monotonic time","ThreadPoolExecutor for blocking I/O libraries"],
+ complexity:[]
+},
+{id:"data-structures",name:"Data Structures & Algorithms",ix:4,group:"Algorithms",
+ concept:`<p>Platform engineers aren't expected to solve DP-heavy LeetCode Hard — but you must be fluent in the core patterns: sliding window, two pointers, hash maps, BFS/DFS for dependency graphs, and heap for top-K problems. These appear in real platform code (dependency resolution, log analysis, cost ranking).</p>
+ <ul>
+ <li><strong>Hash map (dict)</strong>: O(1) lookup — frequency counts, memoization, grouping. Most "clever" solutions need a dict.</li>
+ <li><strong>Heap (heapq)</strong>: O(log n) insert/extract-min. Use for top-K, scheduling, priority queues. Python's heapq is a min-heap; negate values for max-heap.</li>
+ <li><strong>Sliding window</strong>: maintain a window of elements as you scan — O(n) instead of O(n²) for subarray/substring problems.</li>
+ <li><strong>Two pointers</strong>: converge from both ends or advance independently — sorted arrays, in-place operations.</li>
+ <li><strong>BFS/DFS</strong>: graph traversal — dependency ordering, reachability, shortest path (BFS).</li>
+ </ul>`,
+ questions:[
+  {level:"medium",q:"Find the top K most expensive AWS resources from a cost report. O(n log k) solution.",
+   code:`<pre><span class="k">import</span> heapq
+<span class="k">from</span> typing <span class="k">import</span> List, Tuple
+
+<span class="k">def</span> <span class="n">top_k_expensive</span>(
+    resources: List[Tuple[str, float]], k: int
+) -> List[Tuple[str, float]]:
+    <span class="s">"""
+    resources: list of (resource_id, cost)
+    Returns k most expensive, highest first.
+    O(n log k) time, O(k) space.
+    """</span>
+    <span class="c"># Min-heap of size k: heap[0] is the smallest among top-k</span>
+    heap = []
+    <span class="k">for</span> resource_id, cost <span class="k">in</span> resources:
+        heapq.heappush(heap, (cost, resource_id))
+        <span class="k">if</span> len(heap) > k:
+            heapq.heappop(heap)  <span class="c"># evict smallest</span>
+
+    <span class="c"># Sort descending for output</span>
+    <span class="k">return</span> sorted(heap, key=<span class="k">lambda</span> x: -x[<span class="num">0</span>])
+
+<span class="c"># Alternative: heapq.nlargest — same complexity, simpler</span>
+<span class="k">def</span> <span class="n">top_k_v2</span>(resources, k):
+    <span class="k">return</span> heapq.nlargest(k, resources, key=<span class="k">lambda</span> x: x[<span class="num">1</span>])
+
+<span class="c"># Usage</span>
+costs = [(<span class="s">"i-abc"</span>, <span class="num">120.5</span>), (<span class="s">"i-def"</span>, <span class="num">890.0</span>), (<span class="s">"i-ghi"</span>, <span class="num">45.0</span>)]
+<span class="n">print</span>(<span class="n">top_k_expensive</span>(costs, k=<span class="num">2</span>))</pre>`,
+   a:"Min-heap of size k: push every element, pop the min when heap exceeds k. At the end the heap contains the k largest. O(n log k) time. heapq.nlargest is the clean one-liner for the same result.",
+   top1:"They know heapq.nlargest and when to use it (n >> k, use heap; small n, sorted() is fine and clearer). They explain why it's O(n log k) not O(n log n): we only maintain k elements in the heap, so each push/pop is log k. For the platform context: this is exactly how you'd rank 50K resources by cost to build the rightsizing priority list.",
+   pitfall:"Sorting the full list (O(n log n)) when only k results are needed — fine for 100 resources, slow for 100K.",
+   followups:["When is O(n log n) sort better than heap for top-K?","How would you group the top-K by account?"]},
+  {level:"medium",q:"Detect a cycle in a Terraform module dependency graph (directed graph).",
+   code:`<pre><span class="k">from</span> typing <span class="k">import</span> Dict, List, Set
+
+<span class="k">def</span> <span class="n">has_cycle</span>(graph: Dict[str, List[str]]) -> bool:
+    <span class="s">"""
+    graph: {module: [dependencies]}
+    Returns True if a circular dependency exists.
+    DFS with 3-color marking: white=unvisited, gray=in-stack, black=done
+    """</span>
+    WHITE, GRAY, BLACK = <span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>
+    color = {node: WHITE <span class="k">for</span> node <span class="k">in</span> graph}
+
+    <span class="k">def</span> <span class="n">dfs</span>(node: str) -> bool:
+        color[node] = GRAY  <span class="c"># mark in current DFS path</span>
+        <span class="k">for</span> neighbor <span class="k">in</span> graph.get(node, []):
+            <span class="k">if</span> color[neighbor] == GRAY:
+                <span class="k">return</span> <span class="k">True</span>   <span class="c"># back edge = cycle</span>
+            <span class="k">if</span> color[neighbor] == WHITE <span class="k">and</span> dfs(neighbor):
+                <span class="k">return</span> <span class="k">True</span>
+        color[node] = BLACK  <span class="c"># fully explored</span>
+        <span class="k">return</span> <span class="k">False</span>
+
+    <span class="k">return</span> any(dfs(n) <span class="k">for</span> n <span class="k">in</span> graph <span class="k">if</span> color[n] == WHITE)
+
+<span class="c"># Test</span>
+graph = {<span class="s">"vpc"</span>: [<span class="s">"subnet"</span>], <span class="s">"subnet"</span>: [<span class="s">"sg"</span>], <span class="s">"sg"</span>: [<span class="s">"vpc"</span>]}
+<span class="n">print</span>(<span class="n">has_cycle</span>(graph))  <span class="c"># True</span></pre>`,
+   a:"Three-color DFS: GRAY marks nodes in the current DFS stack. Finding a GRAY node from the current path = back edge = cycle. WHITE = unvisited, BLACK = fully explored (safe). Run DFS from every unvisited node to handle disconnected graphs.",
+   top1:"They explain why two colors aren't enough: 'visited' vs 'unvisited' can't distinguish nodes in the current path vs nodes in a completed subtree — a back edge to a completed subtree isn't a cycle. The GRAY = in-current-stack distinction is the key. They mention Kahn's algorithm (topological sort via BFS) as an alternative that also detects cycles.",
+   pitfall:"Using a simple 'visited' set instead of the three-color approach — falsely reports cycles for DAGs with shared dependencies.",
+   followups:["What's Kahn's algorithm and how does it detect cycles?","How would you return the cycle path, not just detect it?"]},
+  {level:"medium",q:"Sliding window: find the longest window of CloudWatch metric values staying below a threshold.",
+   code:`<pre><span class="k">from</span> typing <span class="k">import</span> List, Tuple
+
+<span class="k">def</span> <span class="n">longest_healthy_window</span>(
+    values: List[float], threshold: float
+) -> Tuple[int, int, int]:
+    <span class="s">"""
+    Returns (start, end, length) of the longest window
+    where all values <= threshold.
+    O(n) time, O(1) space.
+    """</span>
+    best_start = best_end = <span class="num">0</span>
+    best_len = <span class="num">0</span>
+    left = <span class="num">0</span>
+
+    <span class="k">for</span> right <span class="k">in</span> range(len(values)):
+        <span class="k">if</span> values[right] > threshold:
+            left = right + <span class="num">1</span>  <span class="c"># reset window</span>
+        <span class="k">else</span>:
+            window_len = right - left + <span class="num">1</span>
+            <span class="k">if</span> window_len > best_len:
+                best_len = window_len
+                best_start, best_end = left, right
+
+    <span class="k">return</span> best_start, best_end, best_len
+
+<span class="c"># Find longest period of healthy CPU (≤ 70%)</span>
+cpu_values = [<span class="num">55</span>, <span class="num">60</span>, <span class="num">72</span>, <span class="num">65</span>, <span class="num">50</span>, <span class="num">45</span>, <span class="num">68</span>]
+start, end, length = <span class="n">longest_healthy_window</span>(cpu_values, <span class="num">70</span>)
+<span class="n">print</span>(<span class="s">f"Healthy window: indices {start}-{end}, length {length}"</span>)</pre>`,
+   a:"Sliding window with two pointers. When a value exceeds the threshold, the window can't include it — reset left to right+1. Track the best window seen. O(n) with O(1) space — no nested loops.",
+   top1:"They frame it in a real platform context — 'find the longest period where CPU stayed healthy before the incident' — showing they'd reach for this pattern naturally in log analysis. They explain why the reset works: a violation breaks the window completely, so there's no benefit in shrinking from the left.",
+   pitfall:"Nested loop O(n²) approach — works but won't scale to millions of time-series data points.",
+   followups:["How would you find all windows exceeding the threshold (not just the longest healthy one)?","How does this change if you allow at most K violations?"]}
+ ],
+ mistakes:["Sorting when heap top-K suffices (O(n log n) vs O(n log k))","Using 'visited' set for cycle detection in directed graphs (need 3-color)","Nested loops where sliding window gives O(n)","Not handling disconnected graphs in DFS","Forgetting to negate values for max-heap with heapq"],
+ patterns:["Heap for top-K problems","3-color DFS for directed cycle detection","Sliding window for contiguous subarray/subrange problems","Dict for frequency/grouping in O(n)"],
+ complexity:[{op:"heap push/pop",avg:"O(log k)",worst:"O(log k)"},{op:"top-K with heap",avg:"O(n log k)",worst:"O(n log k)"},{op:"DFS cycle detect",avg:"O(V+E)",worst:"O(V+E)"},{op:"sliding window",avg:"O(n)",worst:"O(n)"}]
+},
+{id:"boto3-aws",name:"boto3 & AWS Automation",ix:5,group:"Platform Engineering",
+ concept:`<p>boto3 is your primary Python interface to AWS. Senior platform engineers write idiomatic, resilient boto3 scripts: proper pagination, error handling, cross-account patterns, and efficient bulk operations — exactly what your AgentCore framework uses.</p>
+ <ul>
+ <li><strong>Paginators</strong>: AWS APIs return pages; always use <code>client.get_paginator()</code> instead of manual NextToken loops.</li>
+ <li><strong>Waiters</strong>: poll until a resource reaches a state — <code>ec2.get_waiter('instance_running').wait()</code> instead of sleep loops.</li>
+ <li><strong>Resource vs Client</strong>: client is low-level (raw API); resource is higher-level OO wrapper. Use client for full control; resource for convenience.</li>
+ <li><strong>Error handling</strong>: catch <code>ClientError</code> and check <code>e.response['Error']['Code']</code> for specific codes (ThrottlingException, ResourceNotFoundException).</li>
+ <li><strong>Cross-account</strong>: STS AssumeRole → Session with temp creds → use that session's clients.</li>
+ </ul>`,
+ questions:[
+  {level:"platform",q:"Write a script to find all EC2 instances with CPU < 10% over 7 days across multiple accounts (rightsizing candidate finder).",
+   code:`<pre><span class="k">import</span> boto3, json
+<span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta, timezone
+<span class="k">from</span> typing <span class="k">import</span> List, Dict
+<span class="k">from</span> botocore.exceptions <span class="k">import</span> ClientError
+
+<span class="k">def</span> <span class="n">assume_role_session</span>(account_id: str, role_name: str) -> boto3.Session:
+    sts = boto3.client(<span class="s">"sts"</span>)
+    creds = sts.assume_role(
+        RoleArn=<span class="s">f"arn:aws:iam::{account_id}:role/{role_name}"</span>,
+        RoleSessionName=<span class="s">"rightsizing-scan"</span>
+    )[<span class="s">"Credentials"</span>]
+    <span class="k">return</span> boto3.Session(
+        aws_access_key_id=creds[<span class="s">"AccessKeyId"</span>],
+        aws_secret_access_key=creds[<span class="s">"SecretAccessKey"</span>],
+        aws_session_token=creds[<span class="s">"SessionToken"</span>]
+    )
+
+<span class="k">def</span> <span class="n">get_underutilized_instances</span>(
+    account_id: str, role_name: str, region: str = <span class="s">"us-east-1"</span>,
+    cpu_threshold: float = <span class="num">10.0</span>, days: int = <span class="num">7</span>
+) -> List[Dict]:
+    session = <span class="n">assume_role_session</span>(account_id, role_name)
+    ec2 = session.client(<span class="s">"ec2"</span>, region_name=region)
+    cw = session.client(<span class="s">"cloudwatch"</span>, region_name=region)
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=days)
+    results = []
+
+    paginator = ec2.get_paginator(<span class="s">"describe_instances"</span>)
+    <span class="k">for</span> page <span class="k">in</span> paginator.paginate(
+        Filters=[{<span class="s">"Name"</span>: <span class="s">"instance-state-name"</span>, <span class="s">"Values"</span>: [<span class="s">"running"</span>]}]
+    ):
+        <span class="k">for</span> r <span class="k">in</span> page[<span class="s">"Reservations"</span>]:
+            <span class="k">for</span> inst <span class="k">in</span> r[<span class="s">"Instances"</span>]:
+                iid = inst[<span class="s">"InstanceId"</span>]
+                <span class="k">try</span>:
+                    resp = cw.get_metric_statistics(
+                        Namespace=<span class="s">"AWS/EC2"</span>, MetricName=<span class="s">"CPUUtilization"</span>,
+                        Dimensions=[{<span class="s">"Name"</span>: <span class="s">"InstanceId"</span>, <span class="s">"Value"</span>: iid}],
+                        StartTime=start, EndTime=end,
+                        Period=<span class="num">86400</span>, Statistics=[<span class="s">"Average"</span>]
+                    )
+                    datapoints = resp[<span class="s">"Datapoints"</span>]
+                    <span class="k">if not</span> datapoints:
+                        <span class="k">continue</span>
+                    avg_cpu = sum(p[<span class="s">"Average"</span>] <span class="k">for</span> p <span class="k">in</span> datapoints) / len(datapoints)
+                    <span class="k">if</span> avg_cpu < cpu_threshold:
+                        results.append({
+                            <span class="s">"account"</span>: account_id, <span class="s">"instance_id"</span>: iid,
+                            <span class="s">"type"</span>: inst[<span class="s">"InstanceType"</span>], <span class="s">"avg_cpu"</span>: round(avg_cpu, <span class="num">2</span>),
+                            <span class="s">"name"</span>: next((t[<span class="s">"Value"</span>] <span class="k">for</span> t <span class="k">in</span> inst.get(<span class="s">"Tags"</span>, [])
+                                          <span class="k">if</span> t[<span class="s">"Key"</span>] == <span class="s">"Name"</span>), <span class="s">""</span>)
+                        })
+                <span class="k">except</span> ClientError <span class="k">as</span> e:
+                    <span class="k">if</span> e.response[<span class="s">"Error"</span>][<span class="s">"Code"</span>] != <span class="s">"ThrottlingException"</span>:
+                        <span class="k">raise</span>
+    <span class="k">return</span> results</pre>`,
+   a:"Pattern: assume role → scoped session → paginate instances → CloudWatch metric per instance → filter by threshold. Key choices: paginator (not manual NextToken), datetime.now(timezone.utc) (not naive datetimes), catch ThrottlingException specifically (retry in production), extract Name tag safely with next().",
+   top1:"They use timezone-aware datetimes (timezone.utc) because AWS rejects naive datetimes and the error is confusing. They catch ThrottlingException specifically rather than all ClientErrors — programming bugs should still propagate. They use next() with a default for safe tag extraction rather than crashing on missing tags. This is the exact pattern behind the AgentCore rightsizing tool.",
+   pitfall:"Using datetime.utcnow() — returns naive datetime, AWS APIs require timezone-aware. Use datetime.now(timezone.utc).",
+   followups:["How would you parallelize this across 50 accounts?","How would you add exponential backoff for ThrottlingException?"]},
+  {level:"platform",q:"Write a function to batch-tag EC2 instances with proper error handling and dry-run support.",
+   code:`<pre><span class="k">import</span> boto3, logging
+<span class="k">from</span> botocore.exceptions <span class="k">import</span> ClientError
+<span class="k">from</span> typing <span class="k">import</span> Dict, List
+
+logger = logging.getLogger(__name__)
+
+<span class="k">def</span> <span class="n">batch_tag_instances</span>(
+    ec2_client,
+    instance_ids: List[str],
+    tags: Dict[str, str],
+    dry_run: bool = <span class="k">True</span>,
+    batch_size: int = <span class="num">20</span>
+) -> Dict[str, List[str]]:
+    <span class="s">"""Tag instances in batches. dry_run=True by default (safety)."""</span>
+    result = {<span class="s">"succeeded"</span>: [], <span class="s">"failed"</span>: []}
+    tag_list = [{<span class="s">"Key"</span>: k, <span class="s">"Value"</span>: v} <span class="k">for</span> k, v <span class="k">in</span> tags.items()]
+
+    <span class="k">for</span> i <span class="k">in</span> range(<span class="num">0</span>, len(instance_ids), batch_size):
+        batch = instance_ids[i:i + batch_size]
+        <span class="k">try</span>:
+            ec2_client.create_tags(
+                Resources=batch,
+                Tags=tag_list,
+                DryRun=dry_run
+            )
+            result[<span class="s">"succeeded"</span>].extend(batch)
+            logger.info(<span class="s">f"Tagged {len(batch)} instances"</span>)
+        <span class="k">except</span> ClientError <span class="k">as</span> e:
+            code = e.response[<span class="s">"Error"</span>][<span class="s">"Code"</span>]
+            <span class="k">if</span> code == <span class="s">"DryRunOperation"</span>:
+                logger.info(<span class="s">f"DRY RUN OK: would tag {batch}"</span>)
+                result[<span class="s">"succeeded"</span>].extend(batch)
+            <span class="k">else</span>:
+                logger.error(<span class="s">f"Failed to tag {batch}: {e}"</span>)
+                result[<span class="s">"failed"</span>].extend(batch)
+    <span class="k">return</span> result</pre>`,
+   a:"Batch into groups of 20 (AWS limits CreateTags to 1000 resources but smaller batches limit blast radius). dry_run=True by default — safe by default. DryRunOperation is a 'success' error code meaning the call would have worked. Return succeeded/failed lists so callers can act on partial failures.",
+   top1:"dry_run=True as the default is the key safety design — the function is safe by default, not dangerous by default. They handle DryRunOperation as a success case (it raises ClientError but means 'would have worked'). Batching limits blast radius: one bad tag name fails 20 instances, not all 500.",
+   pitfall:"Not batching — CreateTags with 500 resources fails if any are invalid, and you don't know which ones succeeded.",
+   followups:["Why is dry_run=True as the default better than False?","How would you add retry for partial batch failures?"]}
+ ],
+ mistakes:["Using datetime.utcnow() (naive) instead of datetime.now(timezone.utc)","Manual NextToken loops instead of paginators","Catching all ClientError instead of specific codes","No dry-run support for destructive operations","Not batching bulk operations (blast radius + AWS limits)"],
+ patterns:["Assume role → scoped session → paginate → process","Dry-run as default for write operations","Batch write operations with per-batch error handling","Specific ClientError code handling"],
+ complexity:[]
+},
+{id:"oop-patterns",name:"OOP & Design Patterns",ix:6,group:"Foundations",
+ concept:`<p>Platform tooling heavily uses OOP — plugin architectures, client factories, configuration objects. Know the patterns that appear in production Python codebases and AWS SDKs.</p>
+ <ul>
+ <li><strong>dataclass</strong>: <code>@dataclass</code> generates __init__, __repr__, __eq__ automatically. Use for data containers. Add <code>frozen=True</code> for immutable records.</li>
+ <li><strong>ABC (Abstract Base Class)</strong>: define an interface that subclasses must implement — useful for plugin systems and provider abstractions.</li>
+ <li><strong>Factory pattern</strong>: decouple object creation from usage — a function/class that returns different concrete implementations based on config.</li>
+ <li><strong>Singleton</strong>: one instance per class — use sparingly (hard to test). In Python, often replaced by module-level state or dependency injection.</li>
+ <li><strong>Strategy pattern</strong>: pass an algorithm as a parameter (often a callable in Python) instead of subclassing.</li>
+ </ul>`,
+ questions:[
+  {level:"medium",q:"Design a pluggable cost-analysis provider using ABC so Bedrock, OpenAI, and custom models can all be analyzed uniformly.",
+   code:`<pre><span class="k">from</span> abc <span class="k">import</span> ABC, abstractmethod
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass, field
+<span class="k">from</span> typing <span class="k">import</span> Dict, Optional
+
+@dataclass
+<span class="k">class</span> <span class="n">UsageRecord</span>:
+    model_id: str
+    input_tokens: int
+    output_tokens: int
+    latency_ms: float
+    metadata: Dict = field(default_factory=dict)
+
+@dataclass(frozen=<span class="k">True</span>)
+<span class="k">class</span> <span class="n">CostBreakdown</span>:
+    input_cost: float
+    output_cost: float
+    total: float
+    currency: str = <span class="s">"USD"</span>
+
+<span class="k">class</span> <span class="n">CostAnalyzer</span>(ABC):
+    @abstractmethod
+    <span class="k">def</span> <span class="n">calculate_cost</span>(self, record: UsageRecord) -> CostBreakdown: ...
+
+    @abstractmethod
+    <span class="k">def</span> <span class="n">get_model_id</span>(self) -> str: ...
+
+<span class="k">class</span> <span class="n">BedrockCostAnalyzer</span>(CostAnalyzer):
+    PRICES = {  <span class="c"># per 1K tokens</span>
+        <span class="s">"anthropic.claude-3-sonnet"</span>: (<span class="num">0.003</span>, <span class="num">0.015</span>),
+        <span class="s">"amazon.titan-embed-text-v1"</span>: (<span class="num">0.0001</span>, <span class="num">0.0</span>),
+    }
+    <span class="k">def</span> <span class="n">__init__</span>(self, model_id: str):
+        self._model_id = model_id
+
+    <span class="k">def</span> <span class="n">calculate_cost</span>(self, record: UsageRecord) -> CostBreakdown:
+        in_price, out_price = self.PRICES.get(self._model_id, (<span class="num">0</span>, <span class="num">0</span>))
+        ic = record.input_tokens / <span class="num">1000</span> * in_price
+        oc = record.output_tokens / <span class="num">1000</span> * out_price
+        <span class="k">return</span> <span class="n">CostBreakdown</span>(input_cost=ic, output_cost=oc, total=ic+oc)
+
+    <span class="k">def</span> <span class="n">get_model_id</span>(self) -> str: <span class="k">return</span> self._model_id
+
+<span class="k">def</span> <span class="n">make_analyzer</span>(provider: str, model_id: str) -> CostAnalyzer:
+    <span class="s">"""Factory — returns the right analyzer by provider."""</span>
+    <span class="k">if</span> provider == <span class="s">"bedrock"</span>:
+        <span class="k">return</span> <span class="n">BedrockCostAnalyzer</span>(model_id)
+    <span class="k">raise</span> ValueError(<span class="s">f"Unknown provider: {provider}"</span>)</pre>`,
+   a:"ABC enforces the interface contract at instantiation time — you can't create a CostAnalyzer subclass without implementing calculate_cost and get_model_id. frozen=True dataclass for CostBreakdown makes it immutable (can be dict key). Factory function decouples creation from usage.",
+   top1:"They make CostBreakdown frozen=True — a cost result shouldn't be mutated after creation, and frozen dataclasses are hashable (can be used as dict keys). They separate the data containers (dataclasses) from the behavior (ABCs) cleanly. The factory pattern means callers never import concrete classes — easy to add a new provider without changing call sites.",
+   pitfall:"Using ABC without @abstractmethod — the method isn't enforced and subclasses can silently skip implementing it.",
+   followups:["How would you register new providers without modifying the factory function?","When would you use Protocol instead of ABC?"]},
+  {level:"medium",q:"Implement __eq__ and __hash__ correctly for a resource identifier class.",
+   code:`<pre><span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+@dataclass(frozen=<span class="k">True</span>)  <span class="c"># frozen generates __hash__ automatically</span>
+<span class="k">class</span> <span class="n">ResourceId</span>:
+    account_id: str
+    region: str
+    resource_type: str
+    resource_id: str
+
+    <span class="k">def</span> <span class="n">__str__</span>(self):
+        <span class="k">return</span> <span class="s">f"{self.account_id}/{self.region}/{self.resource_type}/{self.resource_id}"</span>
+
+<span class="c"># Manual implementation (when not using dataclass):</span>
+<span class="k">class</span> <span class="n">ResourceIdManual</span>:
+    <span class="k">def</span> <span class="n">__init__</span>(self, account_id, region, resource_type, resource_id):
+        self.account_id = account_id
+        self.region = region
+        self.resource_type = resource_type
+        self.resource_id = resource_id
+
+    <span class="k">def</span> <span class="n">__eq__</span>(self, other):
+        <span class="k">if not</span> isinstance(other, ResourceIdManual):
+            <span class="k">return</span> NotImplemented
+        <span class="k">return</span> (self.account_id, self.region, self.resource_type, self.resource_id) == \
+               (other.account_id, other.region, other.resource_type, other.resource_id)
+
+    <span class="k">def</span> <span class="n">__hash__</span>(self):
+        <span class="k">return</span> hash((self.account_id, self.region, self.resource_type, self.resource_id))</pre>`,
+   a:"__eq__ and __hash__ must be consistent: if a==b then hash(a)==hash(b). Return NotImplemented (not False) for unknown types — lets Python try the other operand's __eq__. The frozen dataclass approach is preferred: @dataclass(frozen=True) generates both automatically.",
+   top1:"They return NotImplemented from __eq__ when the type doesn't match — not False. Returning False would prevent Python from trying the other operand's __eq__, which breaks symmetric comparison. They know that defining __eq__ without __hash__ makes the class unhashable (Python sets __hash__=None when you define __eq__).",
+   pitfall:"Defining __eq__ without __hash__ — Python silently makes the class unhashable, so it can't be used as a dict key or set member.",
+   followups:["What happens to __hash__ when you define __eq__?","Why return NotImplemented instead of False?"]}
+ ],
+ mistakes:["ABC without @abstractmethod — no enforcement","Mutable dataclass used as dict key — unhashable","Defining __eq__ without __hash__ — class becomes unhashable","Returning False instead of NotImplemented from __eq__","Singleton via __new__ — complex and hard to test; use module-level or DI instead"],
+ patterns:["frozen=True dataclass for value objects / dict keys","ABC + @abstractmethod for plugin interfaces","Factory function for provider selection","Strategy via callables instead of subclassing"],
+ complexity:[]
+},
+{id:"testing",name:"Testing with pytest",ix:7,group:"Platform Engineering",
+ concept:`<p>Production platform code requires tests. pytest is the de-facto Python test framework. Senior engineers write tests that are fast, isolated, and actually catch bugs — not tests that just check happy-paths.</p>
+ <ul>
+ <li><strong>fixtures</strong>: reusable setup/teardown via <code>@pytest.fixture</code>. Scope: function (default), class, module, session.</li>
+ <li><strong>parametrize</strong>: run one test with many inputs — <code>@pytest.mark.parametrize</code>. Replaces copy-paste test variants.</li>
+ <li><strong>monkeypatch / mock</strong>: replace real dependencies (boto3 clients, HTTP calls) with controlled stubs. <code>unittest.mock.patch</code> or <code>pytest-mock</code>.</li>
+ <li><strong>moto</strong>: AWS mock library — spins up a fake in-memory AWS environment for boto3 calls. No real API calls in tests.</li>
+ <li><strong>Testing async</strong>: <code>pytest-asyncio</code> for async test functions.</li>
+ </ul>`,
+ questions:[
+  {level:"medium",q:"Write pytest tests for the top_k_expensive function using parametrize.",
+   code:`<pre><span class="k">import</span> pytest
+<span class="k">from</span> solution <span class="k">import</span> top_k_expensive
+
+@pytest.mark.parametrize(<span class="s">"resources,k,expected_ids"</span>, [
+    (  <span class="c"># basic case</span>
+        [(<span class="s">"i-a"</span>, <span class="num">100</span>), (<span class="s">"i-b"</span>, <span class="num">500</span>), (<span class="s">"i-c"</span>, <span class="num">50</span>)],
+        <span class="num">2</span>,
+        [<span class="s">"i-b"</span>, <span class="s">"i-a"</span>]
+    ),
+    (  <span class="c"># k larger than list</span>
+        [(<span class="s">"i-a"</span>, <span class="num">100</span>)],
+        <span class="num">5</span>,
+        [<span class="s">"i-a"</span>]
+    ),
+    (  <span class="c"># empty list</span>
+        [],
+        <span class="num">3</span>,
+        []
+    ),
+    (  <span class="c"># ties</span>
+        [(<span class="s">"i-a"</span>, <span class="num">100</span>), (<span class="s">"i-b"</span>, <span class="num">100</span>)],
+        <span class="num">1</span>,
+        <span class="num">1</span>  <span class="c"># just check length</span>
+    ),
+])
+<span class="k">def</span> <span class="n">test_top_k_expensive</span>(resources, k, expected_ids):
+    result = <span class="n">top_k_expensive</span>(resources, k)
+    <span class="k">if</span> isinstance(expected_ids, list):
+        <span class="k">assert</span> [r[<span class="num">1</span>] <span class="k">for</span> r <span class="k">in</span> result] == expected_ids
+    <span class="k">else</span>:
+        <span class="k">assert</span> len(result) == expected_ids
+
+<span class="k">def</span> <span class="n">test_top_k_returns_sorted_descending</span>():
+    resources = [(<span class="s">f"i-{i}"</span>, float(i)) <span class="k">for</span> i <span class="k">in</span> range(<span class="num">100</span>)]
+    result = <span class="n">top_k_expensive</span>(resources, <span class="num">10</span>)
+    costs = [r[<span class="num">0</span>] <span class="k">for</span> r <span class="k">in</span> result]
+    <span class="k">assert</span> costs == sorted(costs, reverse=<span class="k">True</span>)</pre>`,
+   a:"parametrize avoids copy-paste test methods. Test edge cases: empty input, k > list length, ties. Each parametrize case is a separate test run with its own name in the output. The sorted test verifies the ordering contract separately from the correctness contract.",
+   top1:"They test edge cases (empty, k>n, ties) not just the happy path, and they separate the 'correct elements' test from the 'correct ordering' test — a failure in one tells you exactly what broke. They generate the 100-item list programmatically to avoid a fragile hardcoded fixture.",
+   pitfall:"Only testing the happy path — interviews and production both care about edge cases.",
+   followups:["How would you add a fixture to provide a standard resource list?","How do you test for exceptions being raised?"]},
+  {level:"platform",q:"Mock boto3 EC2 calls in pytest using moto to test the rightsizing scanner.",
+   code:`<pre><span class="k">import</span> pytest, boto3
+<span class="k">from</span> moto <span class="k">import</span> mock_aws
+<span class="k">from</span> solution <span class="k">import</span> get_underutilized_instances
+
+@pytest.fixture
+<span class="k">def</span> <span class="n">aws_credentials</span>(monkeypatch):
+    <span class="s">"""Fake credentials so boto3 doesn't hit real AWS."""</span>
+    monkeypatch.setenv(<span class="s">"AWS_ACCESS_KEY_ID"</span>, <span class="s">"testing"</span>)
+    monkeypatch.setenv(<span class="s">"AWS_SECRET_ACCESS_KEY"</span>, <span class="s">"testing"</span>)
+    monkeypatch.setenv(<span class="s">"AWS_SECURITY_TOKEN"</span>, <span class="s">"testing"</span>)
+    monkeypatch.setenv(<span class="s">"AWS_DEFAULT_REGION"</span>, <span class="s">"us-east-1"</span>)
+
+@pytest.fixture
+<span class="k">def</span> <span class="n">ec2_with_instances</span>(aws_credentials):
+    <span class="k">with</span> mock_aws():
+        ec2 = boto3.client(<span class="s">"ec2"</span>, region_name=<span class="s">"us-east-1"</span>)
+        ec2.run_instances(
+            ImageId=<span class="s">"ami-12345678"</span>, MinCount=<span class="num">1</span>, MaxCount=<span class="num">2</span>,
+            InstanceType=<span class="s">"t3.xlarge"</span>,
+            TagSpecifications=[{<span class="s">"ResourceType"</span>: <span class="s">"instance"</span>,
+                <span class="s">"Tags"</span>: [{<span class="s">"Key"</span>: <span class="s">"Name"</span>, <span class="s">"Value"</span>: <span class="s">"test-server"</span>}]}]
+        )
+        <span class="k">yield</span> ec2
+
+<span class="k">def</span> <span class="n">test_finds_running_instances</span>(ec2_with_instances):
+    <span class="k">with</span> mock_aws():
+        instances = ec2_with_instances.describe_instances(
+            Filters=[{<span class="s">"Name"</span>: <span class="s">"instance-state-name"</span>, <span class="s">"Values"</span>: [<span class="s">"running"</span>]}]
+        )
+        iids = [i[<span class="s">"InstanceId"</span>] <span class="k">for</span> r <span class="k">in</span> instances[<span class="s">"Reservations"</span>]
+                <span class="k">for</span> i <span class="k">in</span> r[<span class="s">"Instances"</span>]]
+        <span class="k">assert</span> len(iids) == <span class="num">2</span></pre>`,
+   a:"moto's @mock_aws intercepts all boto3 calls to in-memory fake AWS. aws_credentials fixture prevents boto3 from reading real ~/.aws/credentials. Fixture yields inside mock_aws context so the context stays active for the test. No real API calls, no cost, no side effects.",
+   top1:"They use monkeypatch.setenv for credentials rather than hardcoding env vars — monkeypatch automatically restores the original values after the test. They know the fixture must yield inside the mock_aws context (not return before it) or the mock context closes before the test runs.",
+   pitfall:"Forgetting to set fake AWS credentials — boto3 tries to find real credentials and fails or silently uses your actual account.",
+   followups:["How would you test the retry/backoff decorator?","How do you test async boto3 calls?"]}
+ ],
+ mistakes:["Only testing happy path — edge cases catch real bugs","Using real AWS credentials in tests (slow, costly, unreliable)","Scope creep in fixtures — fixtures should do one thing","Patching the wrong import path (patch where it's used, not where it's defined)","Not using parametrize — copy-paste test methods get out of sync"],
+ patterns:["parametrize for edge case coverage","moto + monkeypatch for AWS isolation","yield fixtures for setup/teardown","Mock only at the boundary — don't mock internals"],
+ complexity:[]
+},
+{id:"llm-python",name:"LLM & Bedrock Python",ix:8,group:"Platform Engineering",
+ concept:`<p>Python is the primary language for LLM application development. Your role requires writing production-grade Bedrock clients, streaming handlers, prompt pipelines, and embedding workflows.</p>
+ <ul>
+ <li><strong>Bedrock invoke</strong>: <code>bedrock-runtime</code> client, <code>invoke_model</code> for sync and <code>invoke_model_with_response_stream</code> for streaming.</li>
+ <li><strong>Converse API</strong>: higher-level multi-turn API that handles message formatting consistently across models.</li>
+ <li><strong>Embeddings</strong>: call Titan/Cohere embed model, get a float vector, store in OpenSearch.</li>
+ <li><strong>Streaming</strong>: parse the event stream — yield tokens as they arrive for real-time UX.</li>
+ <li><strong>Token counting</strong>: estimate tokens before calling to stay within context limits — use tiktoken or model-specific tokenizers.</li>
+ </ul>`,
+ questions:[
+  {level:"platform",q:"Write a production Bedrock streaming client with error handling, retry, and token tracking.",
+   code:`<pre><span class="k">import</span> boto3, json, logging
+<span class="k">from</span> typing <span class="k">import</span> Iterator, Optional
+<span class="k">from</span> botocore.exceptions <span class="k">import</span> ClientError
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass, field
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+<span class="k">class</span> <span class="n">StreamResult</span>:
+    text: str = <span class="s">""</span>
+    input_tokens: int = <span class="num">0</span>
+    output_tokens: int = <span class="num">0</span>
+
+<span class="k">def</span> <span class="n">bedrock_stream</span>(
+    prompt: str,
+    model_id: str = <span class="s">"anthropic.claude-3-sonnet-20240229-v1:0"</span>,
+    max_tokens: int = <span class="num">1024</span>,
+    region: str = <span class="s">"us-east-1"</span>
+) -> Iterator[str]:
+    <span class="s">"""Yields text chunks from Bedrock streaming. Raises on error."""</span>
+    client = boto3.client(<span class="s">"bedrock-runtime"</span>, region_name=region)
+    body = json.dumps({
+        <span class="s">"anthropic_version"</span>: <span class="s">"bedrock-2023-05-31"</span>,
+        <span class="s">"max_tokens"</span>: max_tokens,
+        <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}]
+    })
+    <span class="k">try</span>:
+        resp = client.invoke_model_with_response_stream(
+            modelId=model_id, body=body,
+            contentType=<span class="s">"application/json"</span>, accept=<span class="s">"application/json"</span>
+        )
+        <span class="k">for</span> event <span class="k">in</span> resp[<span class="s">"body"</span>]:
+            chunk = json.loads(event[<span class="s">"chunk"</span>][<span class="s">"bytes"</span>].decode())
+            <span class="k">if</span> chunk[<span class="s">"type"</span>] == <span class="s">"content_block_delta"</span>:
+                <span class="k">yield</span> chunk[<span class="s">"delta"</span>].get(<span class="s">"text"</span>, <span class="s">""</span>)
+            <span class="k">elif</span> chunk[<span class="s">"type"</span>] == <span class="s">"message_delta"</span>:
+                usage = chunk.get(<span class="s">"usage"</span>, {})
+                logger.info(<span class="s">f"Tokens: in={usage.get('input_tokens',0)} out={usage.get('output_tokens',0)}"</span>)
+    <span class="k">except</span> ClientError <span class="k">as</span> e:
+        code = e.response[<span class="s">"Error"</span>][<span class="s">"Code"</span>]
+        logger.error(<span class="s">f"Bedrock error {code}: {e}"</span>)
+        <span class="k">raise</span>
+
+<span class="c"># Usage</span>
+<span class="k">for</span> chunk <span class="k">in</span> <span class="n">bedrock_stream</span>(<span class="s">"Explain Terraform count vs for_each"</span>):
+    <span class="n">print</span>(chunk, end=<span class="s">""</span>, flush=<span class="k">True</span>)</pre>`,
+   a:"Parse the event stream: content_block_delta events carry text chunks; message_delta carries final token usage. Yield chunks immediately for real-time output. Log token usage for cost tracking. Re-raise ClientErrors after logging — callers need to handle throttling.",
+   top1:"They log token usage from the message_delta event (not estimated — actual usage) for cost tracking. They flush=True in print so streaming actually appears in real-time. They re-raise the ClientError so the caller can implement retry with backoff rather than silently failing.",
+   pitfall:"Not parsing the event type — content_block_start and message_start events don't have text and will KeyError if you blindly access chunk['delta']['text'].",
+   followups:["How would you add retry with backoff for ThrottlingException?","How do you accumulate the full response while still streaming?"]},
+  {level:"platform",q:"Write a batch embedding function that embeds 1000 documents efficiently using Titan Embeddings.",
+   code:`<pre><span class="k">import</span> boto3, json, time
+<span class="k">from</span> typing <span class="k">import</span> List
+<span class="k">from</span> botocore.exceptions <span class="k">import</span> ClientError
+
+<span class="k">def</span> <span class="n">embed_documents</span>(
+    texts: List[str],
+    model_id: str = <span class="s">"amazon.titan-embed-text-v1"</span>,
+    rps_limit: float = <span class="num">5.0</span>
+) -> List[List[float]]:
+    <span class="s">"""
+    Embed texts with rate limiting. Returns list of embedding vectors.
+    Titan has a max ~8192 tokens per call, no batch API — call per text.
+    """</span>
+    client = boto3.client(<span class="s">"bedrock-runtime"</span>)
+    embeddings = []
+    interval = <span class="num">1.0</span> / rps_limit
+
+    <span class="k">for</span> i, text <span class="k">in</span> enumerate(texts):
+        start = time.monotonic()
+        <span class="k">try</span>:
+            resp = client.invoke_model(
+                modelId=model_id,
+                body=json.dumps({<span class="s">"inputText"</span>: text[:<span class="num">8000</span>]}),  <span class="c"># truncate at token limit</span>
+                contentType=<span class="s">"application/json"</span>, accept=<span class="s">"application/json"</span>
+            )
+            body = json.loads(resp[<span class="s">"body"</span>].read())
+            embeddings.append(body[<span class="s">"embedding"</span>])
+        <span class="k">except</span> ClientError <span class="k">as</span> e:
+            <span class="k">if</span> e.response[<span class="s">"Error"</span>][<span class="s">"Code"</span>] == <span class="s">"ThrottlingException"</span>:
+                time.sleep(<span class="num">2</span>)
+                embeddings.append(<span class="k">None</span>)  <span class="c"># handle caller-side</span>
+            <span class="k">else</span>:
+                <span class="k">raise</span>
+        elapsed = time.monotonic() - start
+        <span class="k">if</span> elapsed < interval:
+            time.sleep(interval - elapsed)
+
+    <span class="k">return</span> embeddings</pre>`,
+   a:"Titan has no batch API — call per document with rate limiting. Truncate input to stay within token limit. Rate-limit by measuring call elapsed time and sleeping the remainder of the interval. Return None for throttled items so the caller can retry them specifically.",
+   top1:"They truncate text to 8000 chars as a proxy for the token limit (Titan has ~8192 token max) rather than letting the API error on oversized input. They track elapsed time per call so the rate limiter accounts for API latency — not just inserting a fixed sleep. For production they'd use the async version with asyncio.Semaphore and proper retry backoff.",
+   pitfall:"Not truncating input — Titan returns a 400 error for oversized documents, which is hard to debug if you don't know the limit.",
+   followups:["How would you make this async for higher throughput?","How would you handle None embeddings in the result list?"]}
+ ],
+ mistakes:["Not parsing event type in Bedrock stream — KeyError on non-text events","Not truncating input to model token limits","No rate limiting on embedding calls — hits ThrottlingException","Not logging token usage — can't track cost","Not flushing stdout when streaming — output appears in one burst"],
+ patterns:["Parse event type before accessing fields in stream","Rate-limit with elapsed-time tracking (not fixed sleep)","Log actual token usage from message_delta event","Truncate inputs proactively at model token limits"],
+ complexity:[]
+},
+{id:"file-data",name:"File & Data Processing",ix:9,group:"Foundations",
+ concept:`<p>Platform engineers regularly process log files, CSVs, JSON dumps, and CloudTrail records. Python has excellent stdlib tools — know when to use each and how to handle large files without loading everything into memory.</p>
+ <ul>
+ <li><strong>json / csv</strong>: stdlib modules for common formats. For large files, iterate line by line.</li>
+ <li><strong>pathlib.Path</strong>: modern, OO path handling — prefer over os.path.</li>
+ <li><strong>collections</strong>: Counter (frequency), defaultdict (grouping), deque (sliding window).</li>
+ <li><strong>Large files</strong>: generator-based line iteration — never read all into memory. For S3, stream with get_object()['Body'].iter_lines().</li>
+ <li><strong>pandas</strong>: for tabular data — but know when NOT to use it (overkill for simple filtering, slow startup).</li>
+ </ul>`,
+ questions:[
+  {level:"platform",q:"Parse a large CloudTrail JSON log file line by line, extract failed API calls, and write a CSV report.",
+   code:`<pre><span class="k">import</span> json, csv
+<span class="k">from</span> pathlib <span class="k">import</span> Path
+<span class="k">from</span> collections <span class="k">import</span> Counter
+<span class="k">from</span> typing <span class="k">import</span> Iterator, Dict
+
+<span class="k">def</span> <span class="n">stream_cloudtrail_events</span>(path: Path) -> Iterator[Dict]:
+    <span class="s">"""Yield one CloudTrail event at a time (large file friendly)."""</span>
+    <span class="k">with</span> path.open() <span class="k">as</span> f:
+        data = json.load(f)  <span class="c"># CloudTrail files are one JSON object</span>
+        <span class="k">yield from</span> data.get(<span class="s">"Records"</span>, [])
+
+<span class="k">def</span> <span class="n">failed_calls_report</span>(log_path: Path, output_path: Path):
+    error_counter = Counter()
+    failed_events = []
+
+    <span class="k">for</span> event <span class="k">in</span> <span class="n">stream_cloudtrail_events</span>(log_path):
+        <span class="k">if</span> <span class="s">"errorCode"</span> <span class="k">in</span> event:
+            error_counter[event[<span class="s">"errorCode"</span>]] += <span class="num">1</span>
+            failed_events.append({
+                <span class="s">"time"</span>: event[<span class="s">"eventTime"</span>],
+                <span class="s">"user"</span>: event.get(<span class="s">"userIdentity"</span>, {}).get(<span class="s">"arn"</span>, <span class="s">"unknown"</span>),
+                <span class="s">"action"</span>: event[<span class="s">"eventName"</span>],
+                <span class="s">"error"</span>: event[<span class="s">"errorCode"</span>],
+                <span class="s">"message"</span>: event.get(<span class="s">"errorMessage"</span>, <span class="s">""</span>)[:200]
+            })
+
+    <span class="k">with</span> output_path.open(<span class="s">"w"</span>, newline=<span class="s">""</span>) <span class="k">as</span> csvf:
+        <span class="k">if</span> failed_events:
+            writer = csv.DictWriter(csvf, fieldnames=failed_events[<span class="num">0</span>].keys())
+            writer.writeheader()
+            writer.writerows(failed_events)
+
+    <span class="n">print</span>(<span class="s">"Top errors:"</span>, error_counter.most_common(<span class="num">5</span>))
+    <span class="k">return</span> len(failed_events), error_counter</pre>`,
+   a:"yield from for lazy iteration, Counter for frequency counting, DictWriter with newline='' (required on Windows for correct CSV). Truncate message to 200 chars — CloudTrail error messages can be very long. Return both count and Counter so callers can use the summary without re-parsing.",
+   top1:"They use newline='' in csv.open() — a common gotcha that adds blank lines on Windows without it. They truncate the error message to prevent CSV cells from spanning lines. They use Counter.most_common() for instant frequency ranking without sorting manually. For production they'd stream events from S3 rather than local file.",
+   pitfall:"Opening CSV file without newline='' parameter — adds extra blank lines on Windows.",
+   followups:["How would you stream this directly from S3 without downloading the file?","How would you parallelize across thousands of CloudTrail files?"]},
+  {level:"medium",q:"Given a list of IAM policy documents, find all unique actions being granted across all policies.",
+   code:`<pre><span class="k">import</span> json
+<span class="k">from</span> typing <span class="k">import</span> List, Set
+
+<span class="k">def</span> <span class="n">extract_allowed_actions</span>(policies: List[dict]) -> Set[str]:
+    <span class="s">"""
+    Extract all explicitly allowed IAM actions across policies.
+    Handles both string and list values for Action.
+    Expands wildcards as-is (real expansion requires IAM service).
+    """</span>
+    allowed = set()
+    <span class="k">for</span> policy <span class="k">in</span> policies:
+        document = policy.get(<span class="s">"PolicyDocument"</span>, policy)
+        <span class="k">if</span> isinstance(document, str):
+            document = json.loads(document)
+        <span class="k">for</span> stmt <span class="k">in</span> document.get(<span class="s">"Statement"</span>, []):
+            <span class="k">if</span> stmt.get(<span class="s">"Effect"</span>) != <span class="s">"Allow"</span>:
+                <span class="k">continue</span>
+            actions = stmt.get(<span class="s">"Action"</span>, [])
+            <span class="k">if</span> isinstance(actions, str):
+                actions = [actions]
+            allowed.update(a.lower() <span class="k">for</span> a <span class="k">in</span> actions)
+    <span class="k">return</span> allowed
+
+<span class="c"># Test</span>
+policies = [{<span class="s">"Statement"</span>: [
+    {<span class="s">"Effect"</span>: <span class="s">"Allow"</span>, <span class="s">"Action"</span>: [<span class="s">"s3:GetObject"</span>, <span class="s">"s3:PutObject"</span>]},
+    {<span class="s">"Effect"</span>: <span class="s">"Deny"</span>, <span class="s">"Action"</span>: <span class="s">"s3:DeleteObject"</span>}
+]}]
+<span class="n">print</span>(<span class="n">extract_allowed_actions</span>(policies))
+<span class="c"># {'s3:getobject', 's3:putobject'}</span></pre>`,
+   a:"IAM Action can be a string or a list — must normalize both. PolicyDocument can be a JSON string (as returned by get_policy_version) or already parsed — handle both. Lowercase all actions for consistent set membership. Skip Deny statements — this finds what's allowed.",
+   top1:"They normalize Action to a list regardless of input type — the most common bug in IAM parsing. They handle PolicyDocument as both a string and dict because AWS returns it differently depending on which API you used. They lowercase for consistent deduplication and note that wildcard expansion (s3:*) requires a separate step with the IAM service.",
+   pitfall:"Assuming Action is always a list — AWS allows single actions as strings, and Python will iterate the characters of the string rather than treating it as one action.",
+   followups:["How would you check if 's3:*' in a policy grants 's3:DeleteObject'?","How would you compare two policies to find the privilege difference?"]}
+ ],
+ mistakes:["Loading huge files fully into memory instead of streaming","Not handling Action as both string and list in IAM parsing","CSV without newline='' — blank lines on Windows","Using os.path when pathlib.Path is cleaner and OO","Not using Counter.most_common — manual sort is verbose and slower"],
+ patterns:["yield from for lazy iteration over collections","Counter for frequency + most_common()","Normalize inputs early (str/list → list)","DictWriter with newline='' for correct CSV"],
+ complexity:[]
+},
+{id:"system-scripts",name:"System Design in Code",ix:10,group:"Platform Engineering",
+ concept:`<p>Coding interviews for senior platform roles often give open-ended system scripts: 'write a script that does X across our AWS org.' These aren't algorithm puzzles — they're architecture-in-code. Structure, error handling, and operability matter as much as correctness.</p>
+ <ul>
+ <li><strong>argparse / click</strong>: CLI interfaces for scripts that need to be run by others.</li>
+ <li><strong>logging over print</strong>: structured logging with levels — easy to silence in production or redirect to CloudWatch.</li>
+ <li><strong>Exit codes</strong>: return sys.exit(1) on error — scripts called by CI/CD must signal failure correctly.</li>
+ <li><strong>Idempotency</strong>: running the script twice should be safe. Check before creating/modifying.</li>
+ <li><strong>Dry run flag</strong>: always offer --dry-run for destructive scripts.</li>
+ </ul>`,
+ questions:[
+  {level:"system",q:"Write a CLI script that scans all accounts in an AWS Org for publicly accessible S3 buckets and outputs a JSON report.",
+   code:`<pre><span class="k">#!/usr/bin/env python3</span>
+<span class="k">import</span> argparse, boto3, json, logging, sys
+<span class="k">from</span> botocore.exceptions <span class="k">import</span> ClientError
+<span class="k">from</span> datetime <span class="k">import</span> datetime, timezone
+
+logging.basicConfig(level=logging.INFO, format=<span class="s">"%(levelname)s %(message)s"</span>)
+logger = logging.getLogger(__name__)
+
+<span class="k">def</span> <span class="n">list_org_accounts</span>() -> list:
+    client = boto3.client(<span class="s">"organizations"</span>)
+    paginator = client.get_paginator(<span class="s">"list_accounts"</span>)
+    <span class="k">return</span> [a <span class="k">for</span> page <span class="k">in</span> paginator.paginate()
+            <span class="k">for</span> a <span class="k">in</span> page[<span class="s">"Accounts"</span>] <span class="k">if</span> a[<span class="s">"Status"</span>] == <span class="s">"ACTIVE"</span>]
+
+<span class="k">def</span> <span class="n">is_bucket_public</span>(s3_client, bucket: str) -> bool:
+    <span class="k">try</span>:
+        pab = s3_client.get_public_access_block(Bucket=bucket)
+        cfg = pab[<span class="s">"PublicAccessBlockConfiguration"</span>]
+        <span class="k">return not</span> all(cfg.values())
+    <span class="k">except</span> ClientError <span class="k">as</span> e:
+        <span class="k">if</span> e.response[<span class="s">"Error"</span>][<span class="s">"Code"</span>] == <span class="s">"NoSuchPublicAccessBlockConfiguration"</span>:
+            <span class="k">return</span> <span class="k">True</span>  <span class="c"># no block config = potentially public</span>
+        <span class="k">raise</span>
+
+<span class="k">def</span> <span class="n">scan_account</span>(account_id: str, role_name: str) -> list:
+    sts = boto3.client(<span class="s">"sts"</span>)
+    creds = sts.assume_role(
+        RoleArn=<span class="s">f"arn:aws:iam::{account_id}:role/{role_name}"</span>,
+        RoleSessionName=<span class="s">"s3-public-scan"</span>
+    )[<span class="s">"Credentials"</span>]
+    s3 = boto3.client(<span class="s">"s3"</span>,
+        aws_access_key_id=creds[<span class="s">"AccessKeyId"</span>],
+        aws_secret_access_key=creds[<span class="s">"SecretAccessKey"</span>],
+        aws_session_token=creds[<span class="s">"SessionToken"</span>])
+    findings = []
+    <span class="k">for</span> bucket <span class="k">in</span> s3.list_buckets()[<span class="s">"Buckets"</span>]:
+        name = bucket[<span class="s">"Name"</span>]
+        <span class="k">try</span>:
+            <span class="k">if</span> <span class="n">is_bucket_public</span>(s3, name):
+                findings.append({<span class="s">"account"</span>: account_id, <span class="s">"bucket"</span>: name,
+                    <span class="s">"scanned_at"</span>: datetime.now(timezone.utc).isoformat()})
+        <span class="k">except</span> Exception <span class="k">as</span> e:
+            logger.warning(<span class="s">f"Skipping {name}: {e}"</span>)
+    <span class="k">return</span> findings
+
+<span class="k">def</span> <span class="n">main</span>():
+    p = argparse.ArgumentParser(description=<span class="s">"Scan org for public S3 buckets"</span>)
+    p.add_argument(<span class="s">"--role"</span>, default=<span class="s">"SecurityAuditRole"</span>)
+    p.add_argument(<span class="s">"--output"</span>, default=<span class="s">"public_buckets.json"</span>)
+    args = p.parse_args()
+    all_findings = []
+    accounts = <span class="n">list_org_accounts</span>()
+    logger.info(<span class="s">f"Scanning {len(accounts)} accounts"</span>)
+    <span class="k">for</span> acct <span class="k">in</span> accounts:
+        <span class="k">try</span>:
+            all_findings.extend(<span class="n">scan_account</span>(acct[<span class="s">"Id"</span>], args.role))
+        <span class="k">except</span> Exception <span class="k">as</span> e:
+            logger.error(<span class="s">f"Account {acct['Id']} failed: {e}"</span>)
+    <span class="k">with</span> open(args.output, <span class="s">"w"</span>) <span class="k">as</span> f:
+        json.dump(all_findings, f, indent=<span class="num">2</span>)
+    logger.info(<span class="s">f"Found {len(all_findings)} public buckets → {args.output}"</span>)
+    sys.exit(<span class="num">1</span> <span class="k">if</span> all_findings <span class="k">else</span> <span class="num">0</span>)
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>: <span class="n">main</span>()</pre>`,
+   a:"Production script structure: argparse CLI, proper logging, per-account error isolation (one account failing doesn't stop others), timezone-aware timestamps, exit code 1 if findings found (so CI fails on public buckets). NoSuchPublicAccessBlockConfiguration treated as potentially public — correct security posture.",
+   top1:"They exit with code 1 when findings exist — so this script can be a CI gate that fails the pipeline if any public buckets exist. They isolate per-account failures with try/except so one inaccessible account doesn't stop the scan. They treat missing public access block as potentially public — the secure default. This is a script you'd actually run in production.",
+   pitfall:"Not isolating account failures — one account with a permissions error stops the entire scan, losing results from all subsequent accounts.",
+   followups:["How would you parallelize the account scanning?","How would you add --account-id to scan just one account for debugging?"]}
+ ],
+ mistakes:["print() instead of logging — can't control verbosity or redirect to CloudWatch","No exit code — CI/CD can't detect script failures","Not isolating per-account errors — one failure aborts the whole scan","No --dry-run for destructive scripts","Not paginating Organizations list_accounts — misses accounts in large orgs"],
+ patterns:["main() function + if __name__=='__main__'","argparse for CLI interfaces","Per-item try/except for bulk operations","sys.exit(1) for CI-detectable failure","Structured logging with levels"],
+ complexity:[]
+},
+]; // END TOPICS
+
+// ─── FLASH CARDS ─────────────────────────────────────────────────────────────
+const FLASH = [
+ {q:"What does @functools.wraps do?",a:"Copies __name__, __doc__, __module__ from the wrapped function to the wrapper — preserves introspection and pytest output."},
+ {q:"Why use time.monotonic() instead of time.time()?",a:"monotonic() never goes backwards (immune to NTP/DST clock adjustments) — always use for measuring elapsed durations."},
+ {q:"Mutable default argument bug — one-line fix?",a:"Use None as the default and create the mutable inside the body: def f(x=None): if x is None: x = []"},
+ {q:"What does 'return NotImplemented' mean in __eq__?",a:"Tells Python to try the other operand's __eq__ instead. Returning False falsely claims they're not equal without trying the other side."},
+ {q:"What happens to __hash__ when you define __eq__?",a:"Python sets __hash__ = None making the class unhashable. You must explicitly define __hash__ too."},
+ {q:"asyncio.gather vs asyncio.wait?",a:"gather: runs all, returns results in input order, re-raises exceptions (unless return_exceptions=True). wait: lower level, returns sets of done/pending futures."},
+ {q:"Why use a Semaphore with asyncio.gather?",a:"gather launches all tasks immediately — without a Semaphore, 1000 tasks hit the API simultaneously causing rate limit errors."},
+ {q:"GIL — what does it block and what bypasses it?",a:"GIL blocks multiple threads from running Python bytecode simultaneously. Bypassed by: multiprocessing (separate process), C extensions (numpy, re), and async (cooperative, not parallel)."},
+ {q:"boto3 paginator vs manual NextToken?",a:"Paginator handles NextToken loop automatically, raises if response is malformed, and is easier to read. Always use get_paginator()."},
+ {q:"How to handle ThrottlingException in boto3?",a:"Catch ClientError, check e.response['Error']['Code'] == 'ThrottlingException', then sleep and retry with exponential backoff + jitter."},
+ {q:"datetime.utcnow() vs datetime.now(timezone.utc)?",a:"utcnow() returns a naive datetime — AWS APIs reject it. now(timezone.utc) returns timezone-aware. Always use the latter."},
+ {q:"What is moto used for?",a:"In-memory mock of AWS services for pytest — boto3 calls are intercepted without hitting real AWS. No credentials, no cost, no side effects."},
+ {q:"@pytest.mark.parametrize — what does it do?",a:"Runs the same test function with multiple input sets. Each set is a separate test case with its own pass/fail in output."},
+ {q:"Patch where it's used, not defined — why?",a:"unittest.mock.patch replaces the name in the module under test. If you patch the original definition, the module under test still holds its own reference."},
+ {q:"heapq in Python — min or max heap?",a:"Min-heap. For max-heap, negate the values on insert and negate back on extract."},
+ {q:"heapq.nlargest vs sorting for top-K?",a:"nlargest is O(n log k) — better than O(n log n) sort when k << n. For small n or k ≈ n, sort may be simpler."},
+ {q:"3-color DFS — what are the three states?",a:"WHITE = unvisited, GRAY = in current DFS stack (back edge to GRAY = cycle), BLACK = fully explored."},
+ {q:"Sliding window complexity?",a:"O(n) time, O(1) space — each element is visited at most twice (once when right advances, once when left advances past it)."},
+ {q:"Generator vs list comprehension — when to choose generator?",a:"Generator when: result is consumed once, very large, or consumed partially (break early). List when: need random access, len(), or reuse."},
+ {q:"yield from — what does it do?",a:"Delegates to a sub-generator, yielding all its values. Equivalent to 'for item in sub: yield item' but more efficient and propagates send/throw."},
+ {q:"frozen=True in @dataclass — what does it add?",a:"Makes instances immutable (raises FrozenInstanceError on attribute set) and generates __hash__ so instances can be dict keys and set members."},
+ {q:"ABC vs Protocol?",a:"ABC: explicit inheritance required (class Foo(MyABC)). Protocol: structural subtyping — any class with the right methods qualifies, no inheritance needed (duck typing with type checking)."},
+ {q:"Why sys.exit(1) in a platform script?",a:"CI/CD systems check exit codes. Exit 0 = success. Exit 1 = failure. Without it, the pipeline can't tell if the script found problems."},
+ {q:"Bedrock streaming — which event type has the text?",a:"content_block_delta events. message_delta has the final token usage. message_start and content_block_start have metadata only."},
+ {q:"How do you make a Python class callable?",a:"Define __call__(self, ...) — then instances can be called like functions: obj()"},
+ {q:"What is __slots__?",a:"Replaces the instance __dict__ with a fixed set of attributes — reduces memory by ~30-50% for classes with many instances."},
+ {q:"Counter.most_common(n) complexity?",a:"O(n) for all elements, O(n log k) for top-k (uses heapq.nlargest internally)."},
+ {q:"pathlib.Path vs os.path?",a:"Path is OO and chainable (Path('dir') / 'file.txt'). os.path is functional. Both work; Path is more readable for modern Python."},
+ {q:"csv.writer — what is the newline='' for?",a:"Required on Windows — without it, the csv module adds an extra \\r\\n making blank lines between rows. Always open CSV files with newline=''."},
+ {q:"What does __enter__ return in a context manager?",a:"The value bound to 'as' in the 'with' statement. Return self to expose the manager itself, or return a different resource object."},
+ {q:"When does __exit__ suppress an exception?",a:"When it returns a truthy value. Returning False (or None) lets the exception propagate. Most context managers should return False."},
+ {q:"concurrent.futures ThreadPoolExecutor vs ProcessPoolExecutor?",a:"ThreadPoolExecutor: I/O bound, shared memory, GIL limits CPU parallelism. ProcessPoolExecutor: CPU bound, separate processes/memory, bypasses GIL."},
+ {q:"How do you run a blocking function inside async?",a:"loop.run_in_executor(None, blocking_func, *args) — runs it in a thread pool without blocking the event loop."},
+ {q:"What is asyncio.Lock used for?",a:"Mutual exclusion inside async code — ensures only one coroutine executes a critical section at a time. Use asyncio.Lock (not threading.Lock) in async context."},
+ {q:"Big-O of dict lookup, insert, delete in Python?",a:"Average O(1) for all three. Worst case O(n) due to hash collisions (rare in practice)."},
+ {q:"Two-sum with hash map — complexity?",a:"O(n) time, O(n) space. Iterate once, for each element check if (target - element) is in the hash map."},
+ {q:"BFS vs DFS — when to prefer BFS?",a:"BFS for shortest path (unweighted graphs) and level-by-level traversal. DFS for cycle detection, topological sort, and deep-first exploration."},
+ {q:"Topological sort — what does it produce?",a:"A linear ordering of nodes in a DAG where each node comes before its dependents. Kahn's algorithm (BFS-based) detects cycles by checking if all nodes were visited."},
+ {q:"What is Bedrock's Converse API?",a:"A unified multi-turn chat API that handles message formatting consistently across all Bedrock models — preferred over model-specific invoke payloads."},
+ {q:"How do you make a generator resumable after failure?",a:"Checkpoint state (last processed index/key) to storage (file, DynamoDB) at intervals. On restart, skip already-processed items by loading the checkpoint."}
+];
+
+// ─── APP STATE ────────────────────────────────────────────────────────────────
+let currentMode = 'study';
+let currentTopic = null;
+let activeFilter = 'all';
+let flashIdx = 0;
+let flashFlipped = false;
+let mockPool = [];
+let mockIdx = 0;
+let progress = {};
+
+async function loadProgress(){
+  try{
+    if(window.storage){ const r = await window.storage.get('py_prep_progress'); if(r&&r.value) progress=JSON.parse(r.value); }
+    else{ const ls=localStorage.getItem('py_prep_progress'); if(ls) progress=JSON.parse(ls); }
+  }catch(e){ progress={}; }
+}
+async function saveProgress(){
+  try{
+    const data=JSON.stringify(progress);
+    if(window.storage) await window.storage.set('py_prep_progress',data);
+    else localStorage.setItem('py_prep_progress',data);
+  }catch(e){}
+}
+function markSeen(id){ if(!progress[id])progress[id]={good:0,mid:0,bad:0,seen:0}; progress[id].seen++; updateProgressBar(); saveProgress(); }
+function rateQ(id,rating){ if(!progress[id])progress[id]={good:0,mid:0,bad:0,seen:0}; progress[id][rating]++; saveProgress(); }
+function updateProgressBar(){
+  const seen=TOPICS.filter(t=>progress[t.id]&&progress[t.id].seen>0).length;
+  const pct=Math.round((seen/TOPICS.length)*100);
+  document.getElementById('progfill').style.width=pct+'%';
+  document.getElementById('progcount').textContent=seen+'/'+TOPICS.length+' done';
+  document.getElementById('progpct').textContent=pct+'%';
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function buildNav(){
+  const groups={};
+  TOPICS.forEach(t=>{ if(!groups[t.group])groups[t.group]=[]; groups[t.group].push(t); });
+  const nav=document.getElementById('nav'); nav.innerHTML='';
+  Object.entries(groups).forEach(([g,ts])=>{
+    const grpEl=document.createElement('div'); grpEl.className='navgrp';
+    grpEl.innerHTML='<span class="navgrplbl">'+g+'</span>';
+    ts.forEach(t=>{
+      const li=document.createElement('div'); li.className='navitem'; li.dataset.id=t.id;
+      li.textContent=t.ix+'. '+t.name;
+      li.onclick=()=>showTopic(t.id); grpEl.appendChild(li);
+    });
+    nav.appendChild(grpEl);
+  });
+  const specEl=document.createElement('div'); specEl.className='navgrp';
+  specEl.innerHTML='<span class="navgrplbl">Practice Modes</span>';
+  [{id:'mock-mode',label:'🎤 Mock Interview'},{id:'flash-mode',label:'⚡ Flash Cards'}].forEach(e=>{
+    const li=document.createElement('div'); li.className='navitem'; li.dataset.id=e.id;
+    li.textContent=e.label; li.onclick=()=>{ if(e.id==='mock-mode') setMode('mock'); else setMode('flash'); };
+    specEl.appendChild(li);
+  });
+  nav.appendChild(specEl);
+}
+
+function setActiveNav(id){ document.querySelectorAll('.navitem').forEach(el=>el.classList.toggle('active',el.dataset.id===id)); }
+
+document.getElementById('navsearch').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.navitem').forEach(el=>el.style.display=(!q||el.textContent.toLowerCase().includes(q))?'':'none');
+  document.querySelectorAll('.navgrplbl').forEach(lbl=>{
+    const grp=lbl.parentElement;
+    const visible=[...grp.querySelectorAll('.navitem')].some(el=>el.style.display!=='none');
+    grp.style.display=visible?'':'none';
+  });
+});
+
+// ─── TOPIC RENDER ─────────────────────────────────────────────────────────────
+function lvlLabel(l){ return({easy:'Easy',medium:'Medium',hard:'Hard',platform:'Platform',system:'System Design'})[l]||l; }
+
+function showTopic(id){
+  currentMode='study'; currentTopic=id; setActiveNav(id);
+  const t=TOPICS.find(x=>x.id===id); if(!t)return;
+  markSeen(id);
+  document.getElementById('crumb').textContent=t.name;
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode-study').classList.add('active');
+  activeFilter='all';
+
+  const levels=[...new Set(t.questions.map(q=>q.level))];
+  const filterHTML='<div class="qfilter"><button class="qchip active" onclick="filterQs(this,\'all\')">All</button>'+
+    levels.map(l=>'<button class="qchip" onclick="filterQs(this,\''+l+'\')">'+lvlLabel(l)+'</button>').join('')+'</div>';
+
+  const qHTML=t.questions.map((q,i)=>`
+    <div class="q qlvl-${q.level}" data-lvl="${q.level}">
+      <div class="qhead" onclick="toggleQ(this)">
+        <span class="lvl ${q.level}">${lvlLabel(q.level)}</span>
+        <span class="qtext">${q.q}</span>
+        <span class="qtoggle">▸</span>
+      </div>
+      <div class="qbody">
+        <div class="reveal-prompt">
+          <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Think through your answer, then reveal.</p>
+          <button class="reveal-btn" onclick="revealAnswer(this)">🔍 Reveal Answer & Code</button>
+        </div>
+        <div class="answer-section" style="display:none">
+          ${q.code||''}
+          <div class="ans-block"><span class="albl">Explanation</span><p style="color:var(--muted);font-size:14px">${q.a}</p></div>
+          <div class="top1"><strong>🏆 Top 1% signal:</strong> ${q.top1}</div>
+          ${q.pitfall?'<div class="pitfalls"><strong>⚠️ Common Pitfall:</strong> '+q.pitfall+'</div>':''}
+          ${q.followups&&q.followups.length?'<div class="followups"><strong>🔍 Follow-ups:</strong><ul>'+q.followups.map(f=>'<li>'+f+'</li>').join('')+'</ul></div>':''}
+          <div class="selfrate">
+            <span>Rate yourself:</span>
+            <button class="rate sel-good" onclick="rateQ('${id}','good')">✅ Got it</button>
+            <button class="rate sel-mid" onclick="rateQ('${id}','mid')">😐 Partial</button>
+            <button class="rate sel-bad" onclick="rateQ('${id}','bad')">❌ Missed</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const ctHTML=t.complexity&&t.complexity.length?`
+    <div class="card" style="margin-top:20px">
+      <h3>⏱ Complexity Reference</h3>
+      <table class="ctable"><thead><tr><th>Operation</th><th>Average</th><th>Worst</th></tr></thead><tbody>
+      ${t.complexity.map(c=>`<tr><td>${c.op}</td><td class="good">${c.avg}</td><td class="${c.worst.includes('n²')||c.worst.includes('n log n')?'mid':'good'}">${c.worst}</td></tr>`).join('')}
+      </tbody></table></div>`:'' ;
+
+  const miniHTML=`<div class="grid2">
+    <div class="minicard mistakes"><h4>⚠️ Common Mistakes</h4><ul>${t.mistakes.map(m=>'<li>'+m+'</li>').join('')}</ul></div>
+    <div class="minicard best"><h4>✅ Key Patterns</h4><ul>${t.patterns.map(p=>'<li>'+p+'</li>').join('')}</ul></div>
+  </div>`;
+
+  document.getElementById('view').innerHTML='<div class="card concept"><h2>'+t.name+'</h2>'+t.concept+'</div>'+filterHTML+qHTML+ctHTML+miniHTML;
+}
+
+function toggleQ(el){
+  const card=el.closest('.q'); const icon=el.querySelector('.qtoggle');
+  const open=card.classList.toggle('open'); icon.textContent=open?'▾':'▸';
+}
+function revealAnswer(btn){
+  const wrap=btn.closest('.qbody');
+  wrap.querySelector('.reveal-prompt').style.display='none';
+  wrap.querySelector('.answer-section').style.display='block';
+}
+function filterQs(btn,lvl){
+  document.querySelectorAll('.qchip').forEach(c=>c.classList.remove('active')); btn.classList.add('active');
+  document.querySelectorAll('.q').forEach(q=>q.style.display=(lvl==='all'||q.dataset.lvl===lvl)?'':'none');
+}
+
+// ─── FLASH ───────────────────────────────────────────────────────────────────
+function renderFlash(){
+  const c=FLASH[flashIdx%FLASH.length];
+  return`<div class="flash">
+    <div class="fcard ${flashFlipped?'flipped':''}" onclick="flipFlash()">
+      <div class="ffront"><p>${c.q}</p><small>Click to flip</small></div>
+      <div class="fback"><p>${c.a}</p></div>
+    </div>
+    <div class="fctrl">
+      <button class="bigbtn" onclick="navFlash(-1)">← Prev</button>
+      <span>${(flashIdx%FLASH.length)+1} / ${FLASH.length}</span>
+      <button class="bigbtn" onclick="navFlash(1)">Next →</button>
+    </div>
+    <div class="fctrl" style="margin-top:10px"><button class="bigbtn" onclick="shuffleFlash()">🔀 Shuffle</button></div>
+  </div>`;
+}
+function flipFlash(){ flashFlipped=!flashFlipped; document.getElementById('view').innerHTML=renderFlash(); }
+function navFlash(d){ flashIdx=(flashIdx+d+FLASH.length)%FLASH.length; flashFlipped=false; document.getElementById('view').innerHTML=renderFlash(); }
+function shuffleFlash(){ FLASH.sort(()=>Math.random()-0.5); flashIdx=0; flashFlipped=false; document.getElementById('view').innerHTML=renderFlash(); }
+
+// ─── MOCK ────────────────────────────────────────────────────────────────────
+function renderMock(){
+  if(mockIdx>=mockPool.length) return`<div class="mock-card"><h2>✅ Done! ${mockPool.length} questions complete.</h2><p style="margin:14px 0;color:var(--muted)">Review missed questions by going back to individual topics.</p><button class="bigbtn" onclick="setMode('mock')">Restart</button></div>`;
+  const q=mockPool[mockIdx];
+  return`<div class="mock-card">
+    <div class="mock-meta">Question ${mockIdx+1} of ${mockPool.length} · ${q.topic}</div>
+    <span class="lvl ${q.level}" style="margin:10px 0;display:inline-block">${lvlLabel(q.level)}</span>
+    <div class="mock-q">${q.q}</div>
+    <div id="mock-answer" style="display:none">
+      ${q.code||''}
+      <div class="ans-block"><span class="albl">Explanation</span><p style="color:var(--muted);font-size:14px">${q.a}</p></div>
+      <div class="top1"><strong>🏆 Top 1%:</strong> ${q.top1}</div>
+      ${q.pitfall?'<div class="pitfalls"><strong>⚠️ Pitfall:</strong> '+q.pitfall+'</div>':''}
+      <div class="selfrate">
+        <span>Rate:</span>
+        <button class="rate sel-good" onclick="mockRate()">✅ Got it</button>
+        <button class="rate sel-mid" onclick="mockRate()">😐 Partial</button>
+        <button class="rate sel-bad" onclick="mockRate()">❌ Missed</button>
+      </div>
+    </div>
+    <div id="mock-reveal"><button class="reveal-btn" style="margin-top:18px" onclick="revealMock()">🔍 Reveal Answer</button></div>
+  </div>`;
+}
+function revealMock(){ document.getElementById('mock-answer').style.display='block'; document.getElementById('mock-reveal').style.display='none'; }
+function mockRate(){ mockIdx++; document.getElementById('view').innerHTML=renderMock(); }
+
+// ─── MODE ────────────────────────────────────────────────────────────────────
+function setMode(mode){
+  currentMode=mode;
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode-'+mode).classList.add('active');
+  document.getElementById('crumb').textContent=mode==='study'?'Select a topic':mode==='mock'?'Mock Interview':'Flash Cards';
+  if(mode==='study'){ showTopic(TOPICS[0].id); }
+  if(mode==='mock'){
+    setActiveNav('mock-mode');
+    mockPool=TOPICS.flatMap(t=>t.questions.map(q=>({topic:t.name,...q}))).sort(()=>Math.random()-0.5).slice(0,50);
+    mockIdx=0; document.getElementById('view').innerHTML=renderMock();
+  }
+  if(mode==='flash'){ setActiveNav('flash-mode'); flashIdx=0; flashFlipped=false; document.getElementById('view').innerHTML=renderFlash(); }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+(async function init(){
+  await loadProgress(); buildNav(); updateProgressBar(); showTopic(TOPICS[0].id);
+})();
+</script>
+</body>
+</html>
