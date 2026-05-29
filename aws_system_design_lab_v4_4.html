@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS System Design Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c10;--bg2:#0d1117;--panel:#151a22;--panel2:#1c2330;
+  --line:#1e2535;--line2:#2a3347;--ink:#e2e8f0;--muted:#7a8a9e;--faint:#3d4f68;
+  --amber:#e8b454;--green:#3dffa0;--cyan:#38d9f5;--red:#ff5c7a;
+  --purple:#b07cff;--orange:#ff9f43;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--ink);}
+
+/* ── HEADER ── */
+.hdr{height:50px;background:var(--bg2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:12px;flex-shrink:0;z-index:100;}
+.logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.05rem;color:var(--amber);}
+.logo span{color:var(--cyan);}
+.hdr-sep{width:1px;height:20px;background:var(--line2);}
+.hdr-q{font-size:.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px;}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.prog-txt{font-size:.65rem;color:var(--muted);}
+.prog-bar{width:100px;height:4px;background:var(--line2);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--orange));border-radius:2px;transition:width .4s;}
+.hbtn{padding:4px 11px;border-radius:5px;font-size:.7rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;}
+.hbtn-g{background:transparent;border:1px solid var(--line2);color:var(--muted);}
+.hbtn-g:hover{border-color:var(--amber);color:var(--amber);}
+.hbtn-a{background:var(--amber);color:#000;}
+.hbtn-a:hover{background:var(--orange);}
+
+/* ── LAYOUT ── */
+.layout{display:flex;height:calc(100vh - 50px);position:relative;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:width .28s cubic-bezier(.4,0,.2,1);}
+.sidebar.collapsed{width:0;border-right:none;}
+.sb-hdr{padding:10px 13px;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1px solid var(--line);white-space:nowrap;}
+.qlist{flex:1;overflow-y:auto;overflow-x:hidden;}
+.qlist::-webkit-scrollbar{width:3px;}
+.qlist::-webkit-scrollbar-thumb{background:var(--line2);}
+.qi{padding:8px 13px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;white-space:nowrap;}
+.qi:hover{background:var(--panel);}
+.qi.active{background:var(--panel);border-left-color:var(--amber);}
+.qi-n{font-size:.56rem;color:var(--faint);font-family:'JetBrains Mono',monospace;display:block;margin-bottom:2px;}
+.qi-name{font-size:.75rem;font-weight:500;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.qi-done{color:var(--green);}
+.dbadge{font-size:.52rem;font-weight:700;padding:1px 4px;border-radius:3px;}
+.dbadge-easy{background:#1a2e1a;color:var(--green);}
+.dbadge-medium{background:#2e2514;color:var(--amber);}
+.dbadge-hard{background:#2e1520;color:var(--red);}
+
+/* ── SIDEBAR TOGGLE BUTTON ── */
+.sb-toggle{position:absolute;top:50%;transform:translateY(-50%);z-index:200;
+  width:18px;height:48px;background:var(--panel2);border:1px solid var(--line2);
+  border-left:none;border-radius:0 6px 6px 0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:left .28s cubic-bezier(.4,0,.2,1),background .15s;
+  font-size:.65rem;color:var(--muted);}
+.sb-toggle:hover{background:var(--panel);color:var(--amber);}
+
+/* ── MAIN AREA ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* ── BRIEF BAR (collapsible) ── */
+.brief{background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0;}
+.brief-top{padding:8px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.brief-top:hover{background:rgba(255,255,255,.02);}
+.brief-left{flex:1;min-width:0;display:flex;align-items:center;gap:8px;}
+.brief-title{font-family:'Fraunces',serif;font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dpill{font-size:.56rem;font-weight:700;padding:2px 6px;border-radius:10px;flex-shrink:0;}
+.dpill-easy{background:#1a2e1a;color:var(--green);}
+.dpill-medium{background:#2e2514;color:var(--amber);}
+.dpill-hard{background:#2e1520;color:var(--red);}
+.catpill{font-size:.56rem;padding:2px 6px;border-radius:10px;background:var(--panel2);border:1px solid var(--line2);color:var(--muted);flex-shrink:0;}
+.brief-chevron{font-size:.65rem;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.brief-chevron.open{transform:rotate(180deg);}
+
+/* Brief expanded panel */
+.brief-body{display:none;padding:0 16px 12px;max-height:300px;overflow-y:auto;}
+.brief-body.show{display:block;}
+.brief-body::-webkit-scrollbar{width:3px;}
+.brief-body::-webkit-scrollbar-thumb{background:var(--line2);}
+.bsec{margin-bottom:10px;}
+.bsec-t{font-size:.57rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:5px;display:flex;align-items:center;gap:4px;}
+.bsec-t::before{content:'';width:2px;height:8px;background:var(--amber);border-radius:1px;display:inline-block;}
+.btext{font-size:.72rem;color:var(--muted);line-height:1.6;}
+.bstat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.bstat{background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:5px 8px;}
+.bstat-lbl{font-size:.53rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);display:block;margin-bottom:2px;}
+.bstat-val{font-size:.68rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.c-green{color:var(--green);}
+.c-amber{color:var(--amber);}
+.c-cyan{color:var(--cyan);}
+.c-purple{color:var(--purple);}
+.breq-list{list-style:none;padding:0;}
+.breq-list li{font-size:.7rem;color:var(--muted);padding:2px 0 2px 12px;position:relative;line-height:1.4;}
+.breq-list li::before{content:'▸';position:absolute;left:0;color:var(--amber);font-size:.55rem;top:4px;}
+.bauth-wrap{display:flex;flex-wrap:wrap;gap:4px;}
+.bauth-chip{font-size:.62rem;background:var(--panel2);border:1px solid var(--purple);border-radius:4px;padding:2px 7px;color:var(--purple);}
+.btags-wrap{display:flex;flex-wrap:wrap;gap:4px;}
+.btag{font-size:.6rem;background:var(--panel2);border:1px solid var(--line2);border-radius:3px;padding:1px 6px;color:var(--cyan);}
+.brief-hint{font-size:.6rem;color:var(--faint);font-style:italic;margin-top:6px;}
+
+/* ── CANVAS SPLIT ── */
+.canvas-split{display:flex;flex:1;overflow:hidden;}
+
+/* ── CANVAS AREA ── */
+.canvas-area{flex:1;position:relative;overflow:hidden;background:var(--bg);}
+/* World: the infinite pan/zoom container */
+.canvas-world{position:absolute;top:0;left:0;width:2000px;height:1500px;transform-origin:0 0;will-change:transform;}
+/* Dot grid is a large fixed rect inside the world */
+.dot-bg{position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,#1e2535 1px,transparent 1px);
+  background-size:28px 28px;opacity:.45;}
+#svg-canvas{position:absolute;overflow:visible;pointer-events:none;top:0;left:0;width:2000px;height:1500px;}
+#nodes-layer{position:absolute;top:0;left:0;}
+
+/* Canvas overlay controls (in viewport space) */
+.c-legend{position:absolute;bottom:10px;left:12px;background:rgba(10,12,16,.9);border:1px solid var(--line2);border-radius:6px;padding:6px 12px;display:flex;gap:12px;backdrop-filter:blur(6px);z-index:20;pointer-events:none;}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:.58rem;color:var(--muted);}
+.leg-dot{width:7px;height:7px;border-radius:50%;}
+.step-badge{position:absolute;top:10px;right:12px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:4px 10px;font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);z-index:20;}
+.step-badge b{color:var(--amber);}
+/* Zoom controls */
+.zoom-ctrl{position:absolute;bottom:10px;right:12px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.zc-btn{width:26px;height:26px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);transition:all .15s;font-family:inherit;}
+.zc-btn:hover{border-color:var(--amber);color:var(--amber);}
+.zc-pct{font-size:.57rem;color:var(--faint);font-family:'JetBrains Mono',monospace;}
+/* Canvas placeholder */
+.canvas-ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--muted);pointer-events:none;z-index:5;}
+
+/* ── NODES ── */
+.nd{position:absolute;cursor:pointer;user-select:none;transform:translate(-50%,-50%);}
+.nd-inner{background:var(--panel);border:1.5px solid var(--line2);border-radius:10px;padding:9px 13px;text-align:center;min-width:88px;position:relative;transition:border-color .2s,box-shadow .2s,opacity .2s,filter .2s;}
+.nd.ghost .nd-inner{opacity:.2;filter:grayscale(.9);}
+.nd.ghost:hover .nd-inner{opacity:.4;}
+.nd.lit .nd-inner{opacity:1;filter:none;}
+.nd.active .nd-inner{opacity:1;filter:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(232,180,84,.18),0 6px 24px rgba(0,0,0,.6);}
+.nd.dragging{z-index:999;cursor:grabbing;}
+.nd.dragging .nd-inner{box-shadow:0 12px 40px rgba(0,0,0,.8);transform:scale(1.06);}
+.nd-ring{position:absolute;inset:-5px;border-radius:15px;border:2px solid var(--amber);opacity:0;pointer-events:none;}
+.nd.active .nd-ring{animation:rPulse 1.8s ease-in-out infinite;}
+@keyframes rPulse{0%,100%{opacity:0;transform:scale(1);}50%{opacity:.5;transform:scale(1.06);}}
+@keyframes bounceIn{
+  0%{transform:translate(-50%,-50%) scale(.15);opacity:0;}
+  55%{transform:translate(-50%,-50%) scale(1.1);}100%{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+.nd.bounce-in{animation:bounceIn .4s cubic-bezier(.34,1.56,.64,1) forwards;}
+.nd-icon{font-size:1.55rem;display:block;margin-bottom:3px;line-height:1;}
+.nd-label{font-size:.62rem;font-weight:700;color:var(--ink);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.nd-sub{font-size:.53rem;color:var(--muted);margin-top:2px;white-space:nowrap;}
+
+/* ── RIGHT PANEL ── */
+.rpanel{width:355px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;}
+.rtabs{display:flex;border-bottom:1px solid var(--line);flex-shrink:0;}
+.rtab{flex:1;padding:9px 0;font-size:.68rem;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;}
+.rtab.on{color:var(--amber);border-bottom-color:var(--amber);}
+.rbody{flex:1;overflow-y:auto;}
+.rbody::-webkit-scrollbar{width:3px;}
+.rbody::-webkit-scrollbar-thumb{background:var(--line2);}
+
+/* Detail card */
+.dc{padding:14px;}
+.dc-empty{padding:28px 18px;text-align:center;color:var(--muted);}
+.dc-empty-icon{font-size:2rem;margin-bottom:8px;}
+.dc-empty-t{font-size:.82rem;font-weight:600;color:var(--faint);margin-bottom:5px;}
+.dc-empty-s{font-size:.7rem;line-height:1.55;}
+.dc-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+.dc-icon{font-size:2.2rem;flex-shrink:0;}
+.dc-name{font-size:1rem;font-weight:700;color:var(--amber);}
+.dc-full{font-size:.66rem;color:var(--muted);margin-top:2px;}
+.dc-cat{font-size:.58rem;background:var(--panel2);border:1px solid var(--line2);border-radius:3px;padding:1px 5px;display:inline-block;margin-top:3px;color:var(--cyan);}
+.dc-sec{margin-bottom:13px;}
+.dc-sec-t{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:5px;display:flex;align-items:center;gap:4px;}
+.dc-sec-t::before{content:'';width:3px;height:9px;background:var(--amber);border-radius:2px;display:inline-block;}
+.dc-body{font-size:.74rem;color:var(--muted);line-height:1.65;}
+.dc-body b,.dc-body strong{color:var(--ink);}
+.fsteps{display:flex;flex-direction:column;gap:5px;}
+.fstep{background:var(--panel2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;padding:6px 9px;font-size:.71rem;color:var(--muted);line-height:1.5;}
+.fstep b{color:var(--ink);}
+.fstep-arrow{text-align:center;font-size:.7rem;color:var(--faint);}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.tgc{border-radius:5px;padding:7px 9px;}
+.tgg{background:#0b1d10;border:1px solid #1a3d22;}
+.tgb{background:#1d0b0f;border:1px solid #3d1a22;}
+.tgc-t{font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.tgg .tgc-t{color:var(--green);}
+.tgb .tgc-t{color:var(--red);}
+.tgi{font-size:.66rem;color:var(--muted);padding:2px 0 2px 10px;position:relative;line-height:1.35;}
+.tgi::before{content:'▸';position:absolute;left:0;font-size:.54rem;top:4px;}
+.tgg .tgi::before{color:var(--green);}
+.tgb .tgi::before{color:var(--red);}
+.alts-wrap{display:flex;flex-wrap:wrap;gap:4px;}
+.alt{background:var(--panel2);border:1px solid var(--line2);border-radius:4px;padding:2px 7px;font-size:.63rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);}
+.alt-oss{border-color:var(--green);color:var(--green);}
+.ua{border-radius:5px;padding:7px 9px;margin-top:4px;}
+.ua-y{background:#0b1d10;border:1px solid #1a3d22;}
+.ua-n{background:#1d0b0f;border:1px solid #3d1a22;margin-top:5px;}
+.ua-l{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.ua-y .ua-l{color:var(--green);}
+.ua-n .ua-l{color:var(--red);}
+.ua-t{font-size:.7rem;color:var(--muted);line-height:1.5;}
+.cost-pill{display:inline-flex;align-items:center;gap:5px;background:#1a1228;border:1px solid var(--purple);border-radius:4px;padding:4px 9px;font-size:.68rem;color:var(--purple);}
+.conn-list{display:flex;flex-direction:column;gap:4px;}
+.conn-item{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:4px;padding:5px 8px;font-size:.69rem;}
+.conn-icon{font-size:.85rem;}
+.conn-lbl{color:var(--muted);flex:1;}
+.conn-dir{font-size:.58rem;color:var(--faint);background:var(--line2);border-radius:3px;padding:1px 4px;font-family:'JetBrains Mono',monospace;}
+
+/* Walkthrough tab */
+.wt{padding:10px;}
+.ws{background:var(--panel2);border:1px solid var(--line2);border-radius:7px;margin-bottom:6px;cursor:pointer;}
+.ws.on{border-color:var(--amber);}
+.ws.done{border-color:var(--green);}
+.ws-head{display:flex;align-items:center;gap:7px;padding:8px 11px;}
+.ws-num{width:19px;height:19px;border-radius:50%;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ws.on .ws-num{background:var(--amber);color:#000;}
+.ws.done .ws-num{background:var(--green);color:#000;}
+.ws:not(.on):not(.done) .ws-num{background:var(--line2);color:var(--muted);}
+.ws-t{font-size:.74rem;font-weight:600;flex:1;}
+.ws.on .ws-t{color:var(--amber);}
+.ws.done .ws-t{color:var(--green);}
+.ws-body{font-size:.71rem;color:var(--muted);line-height:1.6;padding:0 11px 9px 37px;display:none;}
+.ws.open .ws-body{display:block;}
+
+/* ── FLOW STRIP ── */
+.flow-strip{height:44px;background:var(--panel);border-top:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;}
+.flow-cur{font-size:.7rem;font-weight:600;color:var(--amber);min-width:130px;}
+.flow-sub{font-size:.62rem;color:var(--muted);}
+.flow-spacer{flex:1;}
+.fbtn{padding:5px 14px;border-radius:5px;font-size:.7rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;}
+.fbtn-g{background:transparent;border:1px solid var(--line2);color:var(--muted);}
+.fbtn-g:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+.fbtn-g:disabled{opacity:.3;cursor:default;}
+.fbtn-a{background:var(--amber);color:#000;}
+.fbtn-a:hover{background:var(--orange);}
+.fbtn-green{background:var(--green);color:#000;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:55px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--panel2);border:1px solid var(--amber);border-radius:6px;padding:7px 16px;font-size:.74rem;color:var(--amber);pointer-events:none;opacity:0;transition:all .25s;z-index:500;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:300;}
+.overlay.show{display:flex;}
+.ov-box{background:var(--panel);border:1px solid var(--amber);border-radius:14px;padding:32px 38px;text-align:center;max-width:400px;}
+.ov-icon{font-size:2.8rem;margin-bottom:9px;}
+.ov-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--amber);margin-bottom:7px;}
+.ov-sub{font-size:.78rem;color:var(--muted);line-height:1.6;margin-bottom:18px;}
+.ov-btn{padding:8px 22px;background:var(--amber);border:none;border-radius:6px;color:#000;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">AWS <span>Design</span> Lab</div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-q" id="hdr-q">Select a question</div>
+  <div class="hdr-r">
+    <span class="prog-txt" id="prog-txt">0/10</span>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <button class="hbtn hbtn-g" onclick="resetQ()">&#8635; Reset</button>
+    <button class="hbtn hbtn-g" onclick="revealAll()">&#128065; Reveal All</button>
+  </div>
+</div>
+
+<div class="layout" id="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-hdr">10 System Design Questions</div>
+    <div class="qlist" id="qlist"></div>
+  </div>
+  <!-- TOGGLE BUTTON (positioned absolutely, tracks sidebar width) -->
+  <div class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()">&#8249;</div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- BRIEF BAR -->
+    <div class="brief" id="brief" style="display:none">
+      <div class="brief-top" onclick="toggleBrief()">
+        <div class="brief-left">
+          <div class="brief-title" id="brief-title">Select a question</div>
+          <span class="dpill" id="brief-dpill"></span>
+          <span class="catpill" id="brief-catpill"></span>
+        </div>
+        <span class="brief-chevron" id="brief-chevron">&#9660;</span>
+      </div>
+      <div class="brief-body" id="brief-body"></div>
+    </div>
+
+    <div class="canvas-split">
+
+      <!-- CANVAS -->
+      <div class="canvas-area" id="canvas-area">
+        <!-- World container: everything that pan/zooms lives here -->
+        <div class="dot-bg"></div>
+        <div class="canvas-world" id="canvas-world">
+          <svg id="svg-canvas"></svg>
+          <div id="nodes-layer"></div>
+        </div>
+
+        <!-- Viewport-space overlays -->
+        <div class="canvas-ph" id="canvas-ph">
+          <div style="font-size:2.8rem;margin-bottom:10px">&#127959;</div>
+          <div style="font-size:.85rem;font-weight:600;color:var(--faint)">Select a question to begin</div>
+          <div style="font-size:.68rem;margin-top:5px">Scroll to zoom &middot; Drag canvas to pan &middot; Drag nodes to rearrange</div>
+        </div>
+
+        <div class="c-legend">
+          <div class="leg-i"><div class="leg-dot" style="background:var(--line2);opacity:.3"></div>Ghost</div>
+          <div class="leg-i"><div class="leg-dot" style="background:var(--amber)"></div>Active</div>
+          <div class="leg-i"><div class="leg-dot" style="background:var(--green)"></div>Revealed</div>
+          <div class="leg-i"><span style="font-size:.8rem">&#8596;</span>Bidir.</div>
+        </div>
+
+        <div class="step-badge" id="step-badge" style="display:none">
+          <b id="step-cur">0</b>/<span id="step-tot">0</span> revealed
+        </div>
+
+        <div class="zoom-ctrl">
+          <button class="zc-btn" onclick="zoomIn()">+</button>
+          <div class="zc-pct" id="zc-pct">100%</div>
+          <button class="zc-btn" onclick="zoomOut()">&minus;</button>
+          <button class="zc-btn" onclick="fitView()" title="Fit to screen">&#8862;</button>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="rpanel">
+        <div class="rtabs">
+          <div class="rtab on" id="rtab-detail" onclick="switchTab('detail')">Detail</div>
+          <div class="rtab" id="rtab-walk" onclick="switchTab('walk')">Walkthrough</div>
+        </div>
+        <div class="rbody" id="rbody-detail">
+          <div class="dc-empty">
+            <div class="dc-empty-icon">&#128433;</div>
+            <div class="dc-empty-t">Click any component</div>
+            <div class="dc-empty-s">All AWS services are on the canvas, ghosted. Click a node or use Next to explore each one step by step.<br><br>Click the brief bar above to see full requirements, scale stats, and auth details.</div>
+          </div>
+        </div>
+        <div class="rbody" id="rbody-walk" style="display:none">
+          <div class="wt" id="wt-wrap">
+            <div style="padding:20px;text-align:center;color:var(--muted);font-size:.75rem">Select a question first</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW STRIP -->
+    <div class="flow-strip">
+      <div>
+        <div class="flow-cur" id="flow-cur">-- ready</div>
+        <div class="flow-sub" id="flow-sub">Click a node or use Next</div>
+      </div>
+      <div class="flow-spacer"></div>
+      <button class="fbtn fbtn-g" id="btn-prev" onclick="prevNode()" disabled>Prev</button>
+      <button class="fbtn fbtn-a" id="btn-next" onclick="nextNode()">Next</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="ov-box">
+    <div class="ov-icon">&#127881;</div>
+    <div class="ov-title" id="ov-title">Architecture Complete!</div>
+    <div class="ov-sub" id="ov-sub"></div>
+    <button class="ov-btn" onclick="closeOverlay()">Next Question</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── COMPONENT LIBRARY ──
+const COMP = {
+  route53:{icon:'🌐',name:'Route 53',full:'Amazon Route 53',cat:'DNS',
+    why:'Route 53 is AWS\'s globally distributed DNS service. It translates domain names to IP addresses and routes users to the nearest healthy endpoint. Latency-based routing sends Mumbai users to India servers automatically, cutting round-trip by 40-60%.',
+    how:[{s:'User queries domain',d:'Browser sends DNS query to nearest Route 53 anycast resolver'},{s:'Routing policy applied',d:'Latency-based, geolocation, weighted, or failover rules evaluated'},{s:'Health check gating',d:'Unhealthy endpoints excluded — auto-failover within 30-60s'},{s:'IP returned',d:'TTL-aware response cached by browser for TTL duration'}],
+    pros:['99.99% SLA — global anycast network','Latency routing cuts TTFB by 40-60%','Health checks every 10-30s — automatic failover','Private hosted zones for VPC service discovery','Alias records to CloudFront/ALB with no extra hop'],
+    cons:['DNS TTL means failover takes 30-60s to propagate','Charges per hosted zone and per query','Cannot do per-request routing — DNS layer only'],
+    alts:[{n:'Cloudflare DNS',t:'oss'},{n:'Google Cloud DNS',t:'cloud'},{n:'Azure Traffic Manager',t:'cloud'},{n:'NS1',t:'cloud'}],
+    cost:'$0.50/hosted zone/month + $0.40/million queries',
+    when:'Use for all public-facing AWS domains. Pair with health checks for zero-touch failover.',
+    avoid:'Already using Cloudflare DNS? Keep it. Cloudflare is free and often faster. Migration adds risk without benefit.'
+  },
+  cloudfront:{icon:'⚡',name:'CloudFront',full:'Amazon CloudFront (CDN)',cat:'CDN',
+    why:'CloudFront is a CDN with 450+ edge locations globally. It caches content near users, reducing latency from 200ms to under 20ms for cached responses and cutting origin load by 70-90%.',
+    how:[{s:'Request hits nearest edge',d:'Singapore POP for SEA users — geographic proximity'},{s:'Cache HIT',d:'Response in under 20ms — origin not touched'},{s:'Cache MISS',d:'Edge fetches from origin (S3, ALB), caches result, serves user'},{s:'Invalidation on deploy',d:'Purge /static/* to clear stale assets globally'}],
+    pros:['450+ global POPs under 20ms latency','DDoS protection via AWS Shield Standard (free)','Lambda@Edge for compute at the edge','Signed URLs for private content access control','Free SSL via ACM'],
+    cons:['Cache invalidation eventually consistent up to 15 minutes','Egress costs spike with high data transfer','Dynamic personalized content bypasses cache — less benefit'],
+    alts:[{n:'Cloudflare CDN',t:'oss'},{n:'Fastly',t:'cloud'},{n:'Akamai',t:'cloud'},{n:'Azure Front Door',t:'cloud'}],
+    cost:'$0.0085-$0.12/GB transfer + $0.0075-$0.02/10K HTTPS requests',
+    when:'Any globally served static assets, video HLS streaming, or APIs with a global audience.',
+    avoid:'All users in one region? A single ALB is simpler. CloudFront adds complexity for purely regional apps.'
+  },
+  waf:{icon:'🛡️',name:'WAF',full:'AWS Web Application Firewall',cat:'Security',
+    why:'WAF sits in front of CloudFront or ALB, inspecting every HTTP request and blocking SQL injection, XSS, bot traffic, and rate-limit abusers before they touch your application code.',
+    how:[{s:'Request arrives at edge',d:'WAF evaluates against Web ACL rules in priority order'},{s:'Rules checked',d:'IP sets, rate limits, OWASP Top 10 managed rules, Bot Control'},{s:'Allow or Block',d:'Block returns 403; Count mode tracks without blocking (for tuning)'},{s:'Logs to CloudWatch/S3',d:'Full request logs for security forensics and compliance'}],
+    pros:['Blocks OWASP Top 10 without any app code changes','Rate limiting per IP stops brute force and scraping','AWS Managed Rules updated by AWS security team','Bot Control identifies credential stuffers','Under 1ms latency overhead'],
+    cons:['Managed rule groups cost $1/month each and add up','False positives require tuning especially for APIs','Not a substitute for app-level input validation'],
+    alts:[{n:'Cloudflare WAF',t:'cloud'},{n:'ModSecurity + Nginx',t:'oss'},{n:'Imperva',t:'cloud'},{n:'AWS Shield Advanced',t:'aws'}],
+    cost:'$5/month per WebACL + $1/million requests + $1/month per managed rule group',
+    when:'Always in front of production public APIs. Critical for HIPAA, PCI-DSS, SOC2 compliance.',
+    avoid:'Internal-only tools with no public exposure. Dev environments where cost outweighs benefit.'
+  },
+  alb:{icon:'⚖️',name:'ALB',full:'Application Load Balancer',cat:'Networking',
+    why:'ALB operates at Layer 7, routing HTTP/HTTPS traffic to the right backend by URL path, hostname, or headers. One ALB can route to 10 microservices via path rules, saving cost vs multiple load balancers.',
+    how:[{s:'Client sends HTTPS request',d:'ALB terminates TLS — backends communicate plain HTTP internally'},{s:'Listener rules evaluated',d:'/api/* goes to API service, /admin/* to admin — content routing'},{s:'Target group selected',d:'Round-robin or least-outstanding-requests algorithm'},{s:'Health check gating',d:'Unhealthy targets removed from rotation within 30 seconds'}],
+    pros:['L7 path and host routing — one ALB for all microservices','SSL termination at the load balancer layer','WebSocket support for real-time applications','Sticky sessions with cookie-based affinity','Lambda as backend target — invoke serverless functions'],
+    cons:['No static IP address — use NLB if you need one','1-2ms overhead vs NLB — usually acceptable','Complex gRPC support limitations'],
+    alts:[{n:'NLB (Layer 4, static IP)',t:'aws'},{n:'API Gateway (serverless)',t:'aws'},{n:'Nginx',t:'oss'},{n:'HAProxy',t:'oss'},{n:'Traefik',t:'oss'}],
+    cost:'$0.016/hour (~$12/month) + $0.008/LCU-hour',
+    when:'Default for all HTTP microservices. One ALB routing to 10 services via path rules is more cost-effective than 10 ALBs.',
+    avoid:'Need a static IP for firewall whitelisting? Use NLB. Raw TCP or UDP protocols need NLB too.'
+  },
+  nlb:{icon:'🔀',name:'NLB',full:'Network Load Balancer',cat:'Networking',
+    why:'NLB operates at Layer 4 (TCP/UDP) with ultra-low latency and static Elastic IPs. Essential when clients must whitelist a fixed IP or when handling millions of connections per second.',
+    how:[{s:'TCP connection arrives',d:'NLB receives raw TCP with no HTTP inspection'},{s:'Hash-based routing',d:'Source IP plus Port determines consistent target selection'},{s:'Source IP preserved',d:'Backend sees real client IP without X-Forwarded-For header'},{s:'Health checks',d:'TCP or HTTP checks every 10 seconds — fast failure detection'}],
+    pros:['Static Elastic IP — clients whitelist a fixed address','10M+ connections per second without degradation','Ultra-low latency under 1ms','Source IP preservation built in','TLS termination optional or pass-through'],
+    cons:['No L7 routing — cannot route by URL path or headers','No request-level logging, only connection flow logs','No cookie-based session stickiness'],
+    alts:[{n:'ALB (HTTP, L7 routing)',t:'aws'},{n:'HAProxy TCP mode',t:'oss'},{n:'IPVS / LVS',t:'oss'}],
+    cost:'$0.016/hour + $0.006/LCU-hour',
+    when:'WebSocket at massive scale, gaming UDP, SMTP proxying, or clients requiring a static IP.',
+    avoid:'Standard web HTTP routing — ALB has more features. NLB is for edge cases needing static IP or non-HTTP protocols.'
+  },
+  ec2:{icon:'🖥️',name:'EC2',full:'Amazon EC2',cat:'Compute',
+    why:'EC2 provides virtual machines with full OS-level control. Choose instance type, OS, storage, and configure everything. The foundation of AWS compute for stateful and long-running workloads.',
+    how:[{s:'Launch from AMI',d:'Amazon Machine Image contains OS plus pre-installed software'},{s:'Instance type selected',d:'t3 general, m7g memory-optimized, c7g compute-optimized, p4d GPU'},{s:'User data script runs',d:'Shell script installs deps and configures app on first boot'},{s:'Runs continuously',d:'Unlike Lambda, idle time is still billed'}],
+    pros:['Full OS control for any language or runtime','700+ instance types spanning CPU, memory, storage, GPU','Spot Instances save 60-90% for fault-tolerant workloads','Placement groups for 10Gbps low-latency clusters','Dedicated hosts for license compliance requirements'],
+    cons:['You manage OS patching, security updates, monitoring','Idle time billed — over-provisioning is common and expensive','Slow to scale: 2-3 minutes per new instance'],
+    alts:[{n:'ECS Fargate (containers)',t:'aws'},{n:'Lambda (serverless)',t:'aws'},{n:'Lightsail (simple)',t:'aws'},{n:'GCP Compute Engine',t:'cloud'}],
+    cost:'t3.medium ~$30/month | m7g.xlarge ~$120/month | Spot saves 70-90%',
+    when:'Stateful apps, legacy systems, GPU workloads, long-running processes over 15 minutes, or when full OS control is needed.',
+    avoid:'Stateless APIs belong on ECS Fargate. Event-driven workloads belong on Lambda. Avoid EC2 just because it feels familiar.'
+  },
+  asg:{icon:'📈',name:'Auto Scaling',full:'EC2 Auto Scaling Group',cat:'Compute',
+    why:'ASG automatically adjusts EC2 instance count based on demand. CloudWatch alarms trigger scale-out when CPU spikes and scale-in when quiet, keeping costs proportional to actual traffic without human intervention.',
+    how:[{s:'CloudWatch alarm fires',d:'CPU over 70% for 2 consecutive minutes triggers scale-out'},{s:'Launch Template used',d:'New EC2 launched with identical AMI, type, and user data'},{s:'ALB registers target',d:'Health checks pass and new instance receives traffic'},{s:'Scale-in protection',d:'Cooldown period prevents thrashing while waiting for stabilization'}],
+    pros:['Horizontal scaling without human action','Scale-in cuts costs during off-peak hours automatically','Self-heals unhealthy instances by replacing them','Predictive scaling uses ML to pre-scale before demand peaks','Multi-AZ spread ensures high availability'],
+    cons:['2-3 minute launch time cannot handle sub-minute traffic spikes','Launch Template version management grows complex over time','Scale-in can terminate mid-request instances — use connection draining'],
+    alts:[{n:'ECS Service Auto Scaling',t:'aws'},{n:'Kubernetes HPA',t:'oss'},{n:'Lambda (auto-scales natively)',t:'aws'},{n:'Karpenter',t:'oss'}],
+    cost:'Free — you pay only for the EC2 instances that are launched',
+    when:'Always pair with EC2 plus ALB. Standard horizontal scaling pattern. Set min to 2 for one instance per AZ minimum.',
+    avoid:'Sub-second traffic spikes need Lambda. A 2-3 minute startup cannot handle sudden bursts.'
+  },
+  ecs:{icon:'🐳',name:'ECS Fargate',full:'Elastic Container Service',cat:'Compute',
+    why:'ECS Fargate runs Docker containers without any server management. Define CPU and memory, and ECS handles provisioning invisibly. Scale from 0 to 1000 containers in seconds.',
+    how:[{s:'Task Definition created',d:'Docker image plus CPU, memory, env vars, and IAM role defined'},{s:'ECS Service launched',d:'Desired count of 3 keeps 3 tasks running across AZs'},{s:'ALB registers tasks',d:'Health check URL configured and traffic routes on passing'},{s:'Auto Scaling active',d:'Target tracking on CPU or custom CloudWatch metrics'}],
+    pros:['Zero server management with no OS patches needed','Scale to zero overnight saving 70% on dev environments','Deploy in seconds versus 2-3 minutes for EC2','Deep AWS integration with IAM, VPC, and CloudWatch','Spot Fargate saves 70% for non-critical tasks'],
+    cons:['Less portable than Kubernetes workloads','Task cold start takes 5-15 seconds','No privileged container support','Higher per-hour cost than equivalent EC2'],
+    alts:[{n:'EKS (Kubernetes)',t:'aws'},{n:'Lambda (event-driven)',t:'aws'},{n:'App Runner (opinionated)',t:'aws'},{n:'Google Cloud Run',t:'cloud'}],
+    cost:'$0.04048/vCPU-hour + $0.004445/GB-hour. 1 vCPU with 2GB runs ~$37/month 24/7',
+    when:'Default choice for new containerized microservices. Simpler than EKS and more scalable than EC2.',
+    avoid:'Need full Kubernetes ecosystem with Istio, Helm, and Argo? Use EKS. Bursty event-driven work belongs on Lambda.'
+  },
+  lambda:{icon:'⚡',name:'Lambda',full:'AWS Lambda (Serverless)',cat:'Serverless',
+    why:'Lambda runs code in response to events with no servers and no idle cost. Scales from 0 to 10,000 concurrent executions in seconds. Pay only per 100ms of execution. The backbone of event-driven architectures on AWS.',
+    how:[{s:'Event trigger fires',d:'API Gateway, S3 upload, SQS message, EventBridge rule, or cron'},{s:'Firecracker microVM starts',d:'AWS provisions a lightweight VM in approximately 100ms cold start'},{s:'Function executes',d:'Up to 10GB RAM, 6 vCPU, and 15 minute max execution time'},{s:'Auto-scales on concurrency',d:'Multiple requests spawn multiple microVMs in parallel instantly'}],
+    pros:['Zero server management','Scales to zero with no idle cost','10GB memory and 6 vCPU per execution','Native triggers from SQS, S3, API Gateway, Kinesis, and DynamoDB Streams','Pay per 100ms of execution time'],
+    cons:['Cold starts from 100ms for Node and Python to 3s for Java','Maximum 15 minute execution time','Hard to debug without structured logging and X-Ray','Vendor lock-in due to Lambda-specific event formats and packaging'],
+    alts:[{n:'ECS Fargate (long-running)',t:'aws'},{n:'EC2 (full control)',t:'aws'},{n:'Google Cloud Functions',t:'cloud'},{n:'Cloudflare Workers (edge)',t:'cloud'}],
+    cost:'Free: 1M requests plus 400K GB-sec per month. Then $0.0000002/request + $0.0000167/GB-sec',
+    when:'Event-driven workloads: S3 triggers, webhooks, cron jobs, image processing, and spiky API backends.',
+    avoid:'Executions over 15 minutes, CPU-heavy workloads, stateful apps, or high-frequency small tasks where cold starts dominate.'
+  },
+  apigateway:{icon:'🚪',name:'API Gateway',full:'Amazon API Gateway',cat:'API',
+    why:'API Gateway creates managed REST, HTTP, and WebSocket APIs with built-in authentication, throttling, versioning, and SSL termination — without writing infrastructure code.',
+    how:[{s:'Client calls endpoint',d:'api.example.com/v1/users via custom domain with Route 53 and ACM'},{s:'Auth evaluated',d:'JWT validation against Cognito or Lambda authorizer executes'},{s:'Throttling applied',d:'Rate limit and burst limit checked against usage plan'},{s:'Backend invoked',d:'Lambda, ECS, or any HTTP endpoint receives the forwarded request'}],
+    pros:['Built-in throttling and DDoS protection','API key management with usage plans','Request and response transformation without code','WebSocket support for real-time communication','Stage variables for dev, staging, and production environments'],
+    cons:['REST APIs cost $3.50/million — expensive at billion calls per day','50-100ms latency overhead per request','10MB payload limit','29 second maximum timeout'],
+    alts:[{n:'ALB (cheaper at high volume)',t:'aws'},{n:'Kong',t:'oss'},{n:'Nginx',t:'oss'},{n:'AppSync (GraphQL)',t:'aws'}],
+    cost:'HTTP API: $1.00/million. REST API: $3.50/million. WebSocket: $1.00/million messages',
+    when:'Serverless APIs with Lambda, or when you need built-in auth, developer portals, and API versioning.',
+    avoid:'At over 100M daily calls, ALB is significantly cheaper. Switch when you do not need API Gateway extra features.'
+  },
+  s3:{icon:'🪣',name:'S3',full:'Amazon S3 (Object Storage)',cat:'Storage',
+    why:'S3 is infinitely scalable object storage with 11 nines of durability (99.999999999%). Store any file at any scale with no capacity planning, no servers, and no management required.',
+    how:[{s:'Upload object',d:'PUT via SDK, CLI, or pre-signed URL — multipart for files over 5GB'},{s:'Stored across 3+ AZs',d:'Data replicated automatically across a minimum of 3 availability zones'},{s:'Access via URL or SDK',d:'Public URL, time-limited signed URL, or bucket policy access control'},{s:'Event triggers',d:'S3 PUT fires Lambda, SQS, or SNS for event-driven pipelines'}],
+    pros:['11 nines durability — statistically 1 object lost per 10,000 years','Unlimited capacity with no pre-provisioning needed','Intelligent Tiering automatically moves objects to cheaper storage classes','Event notifications for Lambda pipeline triggers','Static website hosting built in'],
+    cons:['Not a filesystem — no append operation, no partial reads without range requests','Small object operations at high frequency are expensive','Egress costs $0.09/GB — use CloudFront to reduce this'],
+    alts:[{n:'EFS (shared filesystem)',t:'aws'},{n:'EBS (single-instance block)',t:'aws'},{n:'Google Cloud Storage',t:'cloud'},{n:'Cloudflare R2 (no egress fee)',t:'cloud'}],
+    cost:'Standard: $0.023/GB-month | IA: $0.0125/GB | Glacier: $0.004/GB',
+    when:'Static assets, user uploads, data lake, ML datasets, backups, CloudFront origin, and static website hosting.',
+    avoid:'Not for transactional data (use DynamoDB or RDS), real-time reads (use ElastiCache), or filesystem operations (use EFS).'
+  },
+  rds:{icon:'🗄️',name:'RDS',full:'Amazon RDS (Managed SQL)',cat:'Database',
+    why:'RDS is fully managed relational databases — PostgreSQL, MySQL, MariaDB, Oracle, SQL Server. AWS handles all DBA tasks: patching, backups, replication, and failover automatically.',
+    how:[{s:'Primary DB instance',d:'Handles all reads and writes, runs in one AZ'},{s:'Multi-AZ standby',d:'Synchronous replication with auto-failover in 60-120 seconds'},{s:'Read Replicas',d:'Async replication to up to 5 replicas for read scaling'},{s:'Automated backups',d:'Daily snapshots plus transaction logs for point-in-time recovery'}],
+    pros:['Fully managed — patches, backups, and failover handled automatically','Multi-AZ for 99.95% availability SLA','Up to 5 read replicas for scaling reads out','Point-in-time recovery up to 35 days','Enhanced monitoring at per-second granularity'],
+    cons:['2-3x more expensive than self-managed PostgreSQL on EC2','Multi-AZ doubles the cost','Vertical scaling requires a 60-120 second restart','Maximum 64TB — use Aurora for larger datasets','Connection pooling still needed — use RDS Proxy'],
+    alts:[{n:'Aurora (5x faster, same API)',t:'aws'},{n:'DynamoDB (NoSQL)',t:'aws'},{n:'PlanetScale (serverless MySQL)',t:'cloud'},{n:'CockroachDB',t:'cloud'}],
+    cost:'db.t3.medium Multi-AZ ~$120/month | db.r6g.xlarge Multi-AZ ~$450/month',
+    when:'Any relational workload needing ACID transactions, complex SQL joins, and strong consistency.',
+    avoid:'For massive scale use Aurora. For simple key-value lookups use DynamoDB. For analytics-only workloads use Redshift.'
+  },
+  aurora:{icon:'⭐',name:'Aurora',full:'Amazon Aurora',cat:'Database',
+    why:'Aurora is cloud-native relational DB — PostgreSQL and MySQL compatible but 5x faster than MySQL and 3x faster than Postgres. Storage auto-scales to 128TB and replicates 6 ways across 3 AZs.',
+    how:[{s:'Shared storage volume',d:'All instances share one 6-way replicated storage layer'},{s:'Writer instance',d:'One primary handles all writes with no sync overhead to readers'},{s:'Up to 15 readers',d:'Readers added in minutes without copying data — shared storage'},{s:'Aurora Serverless v2',d:'Scales by Aurora Capacity Unit in under 1 second — true serverless SQL'}],
+    pros:['6-way replication across 3 AZs with 99.99% SLA','Up to 15 read replicas with under 10ms lag','Serverless v2 scales to zero for dev and staging environments','Global Database for multi-region disaster recovery','Backtrack to rewind without restoring from backup'],
+    cons:['2-3x more expensive than RDS','Proprietary storage layer creates vendor lock-in','Serverless cold starts take 5-10 seconds','Not available in all AWS regions'],
+    alts:[{n:'RDS PostgreSQL (simpler)',t:'aws'},{n:'CockroachDB (distributed)',t:'cloud'},{n:'AlloyDB (GCP)',t:'cloud'},{n:'Spanner (Google, global)',t:'cloud'}],
+    cost:'Serverless v2: $0.12/ACU-hour. Provisioned db.r6g.large ~$210/month',
+    when:'Production relational workloads on AWS. Serverless v2 for dev and staging. Global Database for multi-region DR.',
+    avoid:'Small low-traffic apps where cost matters — RDS PostgreSQL is sufficient and notably cheaper.'
+  },
+  dynamodb:{icon:'🔰',name:'DynamoDB',full:'Amazon DynamoDB (NoSQL)',cat:'Database',
+    why:'Fully serverless NoSQL delivering single-digit millisecond reads at any scale. No capacity planning — auto-scales read/write capacity. Used by Amazon.com for Prime Day at virtually unlimited scale.',
+    how:[{s:'Item stored by partition key',d:'DynamoDB hashes PK to route to the correct storage shard'},{s:'Read or Write request',d:'Hits storage node directly with no query planning overhead'},{s:'GSI for secondary access',d:'Global Secondary Index enables queries on non-primary attributes'},{s:'DynamoDB Streams',d:'Every change captured to trigger Lambda for CDC or notifications'}],
+    pros:['Single-digit ms latency at unlimited scale','Fully serverless — no capacity planning required','Global Tables for multi-region active-active replication','Streams for Lambda event sourcing and CDC','TTL auto-expiry for sessions and temporary data'],
+    cons:['No SQL joins — access patterns must be designed upfront and are hard to change','400KB item size limit per item','On-demand pricing gets expensive at sustained high write rates','Eventual consistency by default for reads'],
+    alts:[{n:'MongoDB Atlas',t:'cloud'},{n:'Cassandra / Scylla',t:'oss'},{n:'Redis',t:'oss'},{n:'Firebase Firestore',t:'cloud'},{n:'PostgreSQL JSONB',t:'oss'}],
+    cost:'On-demand: $1.25/million writes, $0.25/million reads',
+    when:'Sessions, carts, leaderboards, IoT state, high-scale key-value, and unpredictable or extreme traffic spikes.',
+    avoid:'Complex relational data with many joins — Aurora or RDS will be far simpler to work with.'
+  },
+  elasticache:{icon:'🔥',name:'ElastiCache',full:'Amazon ElastiCache (Redis)',cat:'Cache',
+    why:'Managed in-memory Redis with sub-millisecond reads. Caches DB results, sessions, computed aggregates, and rate-limit counters. Reduces DB read load by 80-90% for typical web applications.',
+    how:[{s:'Cache-aside pattern',d:'App checks Redis — HIT returns in under 1ms — MISS queries DB and caches with TTL'},{s:'Sub-millisecond read',d:'Data served from RAM — orders of magnitude faster than any disk database'},{s:'TTL expiration',d:'Items auto-expire to prevent stale data accumulating'},{s:'Cache invalidation',d:'On DB write, DEL the cache key. Event-driven via DynamoDB Streams or SNS'}],
+    pros:['Sub-ms reads — fastest data layer available','Redis Cluster for horizontal scaling across nodes','Auto-failover in Multi-AZ mode within 60 seconds','Sorted sets, pub/sub, Lua scripting, and geospatial commands','ElastiCache Serverless auto-scales with no capacity planning'],
+    cons:['Memory is expensive per GB compared to disk','Data loss on restart unless AOF persistence configured','Cache invalidation is notoriously hard to get exactly right','Extra network hop adds 1-2ms to each request'],
+    alts:[{n:'Redis on EC2 (self-managed)',t:'oss'},{n:'DynamoDB DAX',t:'aws'},{n:'Memcached',t:'oss'},{n:'Valkey (open-source fork)',t:'oss'},{n:'DragonFly',t:'oss'}],
+    cost:'cache.r7g.large ~$150/month. Serverless: $0.00034/ECPU + $0.125/GB-hour',
+    when:'DB latency over 5ms or reads overwhelming the database. Essential for sessions, rate limiting, leaderboards, and autocomplete.',
+    avoid:'DB is already under 5ms and traffic is moderate — caching adds complexity without clear benefit then.'
+  },
+  sqs:{icon:'📬',name:'SQS',full:'Amazon SQS (Queue)',cat:'Messaging',
+    why:'Fully managed distributed message queue that decouples producers from consumers. Messages stored durably until consumed. Consumer crashes mid-processing? Message reappears and retries. Prevents data loss and cascading failures.',
+    how:[{s:'Producer sends message',d:'PUT to queue — persisted across 3 AZs, returns 200 immediately'},{s:'Consumer polls queue',d:'ReceiveMessage with long polling up to 20s to reduce cost'},{s:'Visibility timeout',d:'Message hidden from other consumers while being processed'},{s:'Delete or retry',d:'On success DeleteMessage. On failure timeout expires and message reappears'}],
+    pros:['Unlimited throughput for Standard queues','Dead Letter Queue captures failed messages for inspection','FIFO queues give exactly-once processing and strict ordering','Lambda trigger invokes Lambda with batches of messages','Retention up to 14 days buffers consumer downtime'],
+    cons:['Pull-based adds 100-500ms polling latency versus push','Standard queue delivers at-least-once — your code needs idempotency','FIFO queue limited to 3000 messages per second','Maximum 256KB per message — use S3 pointer pattern for larger payloads'],
+    alts:[{n:'SNS (push, fan-out)',t:'aws'},{n:'Kinesis (streaming, replay)',t:'aws'},{n:'EventBridge',t:'aws'},{n:'RabbitMQ',t:'oss'}],
+    cost:'First 1M requests per month free. Standard: $0.40/million. FIFO: $0.50/million',
+    when:'Decoupling any two services, buffering writes during spikes, safe retry patterns, and async workflows.',
+    avoid:'Multiple consumers replaying the same stream — use Kinesis. Push notifications to many subscribers — use SNS.'
+  },
+  sns:{icon:'📢',name:'SNS',full:'Amazon SNS (Pub/Sub)',cat:'Messaging',
+    why:'Push-based pub/sub where one message published to a Topic is immediately fan-out delivered to ALL subscribers in parallel — SQS queues, Lambda functions, email, SMS, HTTP endpoints.',
+    how:[{s:'Publisher sends to Topic',d:'Publish API stores message and returns MessageId immediately'},{s:'Subscriptions evaluated',d:'All active confirmed subscriptions receive the message'},{s:'Fan-out delivery',d:'SNS pushes to all subscribers simultaneously in parallel'},{s:'Filter policies applied',d:'Subscribers receive only messages matching their JSON attribute filter'}],
+    pros:['Fan-out to 12.5 million subscriptions per topic','Mobile push to iOS (APNs) and Android (FCM)','SMS delivery to 200+ countries with delivery tracking','Message filtering per subscriber reduces unnecessary processing','FIFO topics for ordered fan-out scenarios'],
+    cons:['Fire-and-forget — if subscriber is down at delivery, message is lost','Must pair with SQS for durable guaranteed delivery','No replay capability for past messages'],
+    alts:[{n:'EventBridge (complex routing)',t:'aws'},{n:'Kafka / MSK',t:'oss'},{n:'Redis Pub/Sub',t:'oss'},{n:'Google Cloud Pub/Sub',t:'cloud'}],
+    cost:'$0.50/million publishes plus delivery cost per endpoint type',
+    when:'Fan-out patterns: order placed goes to warehouse, email, and analytics simultaneously. Always pair SNS to SQS for durability.',
+    avoid:'Critical messages without an SQS subscriber — SNS alone drops messages when subscribers are down.'
+  },
+  kinesis:{icon:'🌊',name:'Kinesis',full:'Amazon Kinesis Streams',cat:'Streaming',
+    why:'Real-time data streaming where multiple consumers read the same stream independently and can replay from any past point. Unlike SQS which delivers once, Kinesis retains data for 24 hours to 7 days.',
+    how:[{s:'Producers write records',d:'PutRecord to stream — ordered within each shard'},{s:'Records stored in shards',d:'Each shard handles 1MB/s write and 2MB/s read — add shards to scale'},{s:'Multiple consumers',d:'Each consumer reads independently at its own offset position'},{s:'Enhanced Fan-out',d:'Dedicated 2MB/s per consumer per shard with no throughput sharing'}],
+    pros:['Multiple independent consumers read the same data stream','Replay from any point in the retention window up to 7 days','Sub-second end-to-end latency','Kinesis Firehose auto-delivers to S3, Redshift, or OpenSearch','Enhanced Fan-out gives each consumer its own throughput'],
+    cons:['Manual shard management — auto-scaling is possible but complex','Charged per shard-hour regardless of actual usage','1MB maximum per record','More operational overhead than SQS for simple use cases'],
+    alts:[{n:'MSK / Apache Kafka',t:'oss'},{n:'SQS (simpler, one consumer)',t:'aws'},{n:'EventBridge Pipes',t:'aws'},{n:'Confluent Cloud',t:'cloud'}],
+    cost:'$0.015/shard-hour + $0.08/million PUT units. 1 shard for 1 year is approximately $131',
+    when:'Real-time analytics: clickstreams, IoT sensor data, logs, fraud detection. Multiple services consuming the same event stream.',
+    avoid:'Simple async queue with one consumer — SQS is simpler and cheaper. Rich Kafka ecosystem — use MSK instead.'
+  },
+  eventbridge:{icon:'🎯',name:'EventBridge',full:'Amazon EventBridge',cat:'Messaging',
+    why:'Serverless event bus routing events from AWS services, your apps, and 200+ SaaS tools to targets based on content-based JSON rules. More powerful routing than SNS with event archive and replay.',
+    how:[{s:'Event published to bus',d:'PutEvents with source, detail-type, and detail JSON fields'},{s:'Rules evaluated',d:'JSON pattern matching on any event field — evaluated in parallel'},{s:'Targets invoked',d:'Lambda, Step Functions, SQS, ECS, API Gateway, and more'},{s:'Event archive',d:'Optional archive of all events for replay during debugging or migration'}],
+    pros:['Content-based routing on any JSON field without code changes','200+ native AWS service integrations','SaaS integrations: Datadog, Zendesk, Stripe events directly','Schema Registry with auto-discovery and code generation','Event archive and replay for debugging and bootstrapping new consumers'],
+    cons:['Maximum 5 targets per rule','Delivery latency measured in seconds not milliseconds','64KB event size limit','Higher per-event cost versus SQS at very high volume'],
+    alts:[{n:'SNS (simpler pub/sub)',t:'aws'},{n:'SQS (durable queuing)',t:'aws'},{n:'Kafka / MSK',t:'oss'},{n:'Azure Event Grid',t:'cloud'}],
+    cost:'$1.00/million events on custom bus. Default AWS bus is free',
+    when:'Microservice event routing with complex JSON matching, SaaS event consumption, and event replay for debugging.',
+    avoid:'Simple two-service async decoupling — SQS is simpler and cheaper. High-throughput data streaming — use Kinesis.'
+  },
+  cognito:{icon:'👤',name:'Cognito',full:'Amazon Cognito (Auth)',cat:'Auth',
+    why:'Handles all user authentication: signup, login, MFA, social login via Google, Facebook, and Apple, and SAML SSO for enterprise. Issues JWT tokens. Free for 50K MAUs.',
+    how:[{s:'User signs up or logs in',d:'Cognito User Pool validates credentials and hashes passwords'},{s:'MFA verification optional',d:'TOTP, SMS OTP, or email OTP as a second factor'},{s:'JWT tokens issued',d:'ID token with user claims, Access token with API scopes, Refresh token'},{s:'API validates JWT',d:'API Gateway or ALB validates signature against Cognito JWKS endpoint'}],
+    pros:['Free for first 50K MAUs','Social login via Google, Facebook, and Apple out of the box','Hosted UI requires no custom login page','Lambda triggers for custom auth logic','Identity Pools for AWS IAM federation to resources'],
+    cons:['UI customization is limited to CSS only','Complex custom flows require many Lambda triggers','Migrating users away is painful — password hashes are not exportable','Token refresh adds complexity to client code'],
+    alts:[{n:'Auth0 (better DX)',t:'cloud'},{n:'Okta (enterprise)',t:'cloud'},{n:'Keycloak (self-hosted)',t:'oss'},{n:'Firebase Auth',t:'cloud'}],
+    cost:'Free: first 50K MAUs. $0.0055/MAU for 50K-100K. Advanced Security +$0.05/MAU',
+    when:'Building entirely on AWS and want auth out of the box. Pair with API Gateway JWT authorizer for zero-code API security.',
+    avoid:'Complex enterprise SSO or fine-grained role management — Auth0 provides significantly better tooling despite higher cost.'
+  },
+  cloudwatch:{icon:'📊',name:'CloudWatch',full:'Amazon CloudWatch',cat:'Observability',
+    why:'Unified monitoring platform collecting metrics, logs, and traces from every AWS service automatically. Set alarms for auto-scaling or on-call paging. Without CloudWatch you are flying blind in production.',
+    how:[{s:'Metrics emitted automatically',d:'Lambda, EC2, RDS, ALB all publish metrics every 60 seconds by default'},{s:'Custom metrics via SDK',d:'Business KPIs like orders per minute, payment failures, cart abandonment'},{s:'Alarms evaluate metrics',d:'CPU over 70% for 2 periods triggers scale-out policy automatically'},{s:'Logs Insights query',d:'SQL over log groups: SELECT avg(duration) FROM /aws/lambda/my-function'}],
+    pros:['Zero-config metrics for all AWS services','Logs Insights runs SQL queries over billions of log events','Composite Alarms combine multiple conditions for precise alerting','Anomaly Detection provides ML-based alerting on statistical baselines','Dashboard for real-time visualization of business and technical metrics'],
+    cons:['Dashboard UI is less polished than Grafana','Log storage costs add up — set lifecycle policies early','No distributed tracing — add X-Ray for request-level traces','Default metric resolution is 1-minute — not sub-minute'],
+    alts:[{n:'Datadog (better UX)',t:'cloud'},{n:'Grafana + Prometheus',t:'oss'},{n:'New Relic',t:'cloud'},{n:'OpenTelemetry',t:'oss'}],
+    cost:'Custom metrics: $0.30/metric/month. Logs: $0.50/GB ingested. Alarms: $0.10/alarm/month',
+    when:'Always enable. Add custom business metrics. Set alarms on P99 latency, error rate, and queue depth.',
+    avoid:'Team already uses Datadog extensively? Use CloudWatch as collection layer and forward metrics — avoid duplicating dashboards.'
+  },
+  cloudtrail:{icon:'📋',name:'CloudTrail',full:'AWS CloudTrail (Audit)',cat:'Security',
+    why:'Records every API call in your AWS account — who did what, to which resource, when, and from which IP. The forensic log for security incidents, compliance audits (SOC2, PCI, HIPAA), and debugging production issues.',
+    how:[{s:'API call made anywhere',d:'Console click, CLI command, SDK call — all captured automatically'},{s:'Event written to CloudTrail',d:'JSON event with who, what, where, and when — delivered within 15 minutes'},{s:'Delivered to S3 and CloudWatch',d:'S3 for long-term archival, CloudWatch Logs for real-time alerting'},{s:'Query with Athena',d:'SELECT * FROM cloudtrail WHERE eventName = DeleteBucket AND errorCode IS NULL'}],
+    pros:['Free for management events on one trail','Tamper-proof storage via S3 Object Lock WORM configuration','CloudTrail Lake enables SQL queries over years of audit history','Insights automatically detects unusual API activity patterns','Multi-region trails cover all regions including new ones automatically'],
+    cons:['Up to 15-minute delivery delay — not real-time forensics','Data events (S3 object reads) cost extra and generate massive volume','Requires Athena setup for efficient querying of historical data'],
+    alts:[{n:'AWS Config (resource state)',t:'aws'},{n:'Security Hub',t:'aws'},{n:'GuardDuty (ML threat detection)',t:'aws'},{n:'Splunk (SIEM)',t:'cloud'}],
+    cost:'Free for management events on 1 trail. Data events: $0.10/100K events',
+    when:'Enable on day 1 — free and required for every compliance framework. Enable S3 Object Lock for immutable tamper-proof logs.',
+    avoid:'No reason to avoid — management events are free. Only data events (S3 object-level) and Lake have additional cost.'
+  },
+  vpc:{icon:'🏠',name:'VPC',full:'Amazon VPC',cat:'Networking',
+    why:'Your private isolated network in AWS. Control IP ranges, subnets, routing, and firewalls. All production resources should live in a VPC with databases in private subnets and load balancers in public subnets.',
+    how:[{s:'VPC with CIDR block',d:'e.g. 10.0.0.0/16 gives 65,536 IP addresses to allocate across subnets'},{s:'Public subnets',d:'Connected to Internet Gateway for ALBs and NAT Gateways'},{s:'Private subnets',d:'No direct internet access for EC2, RDS, ECS, and Lambda'},{s:'NAT Gateway',d:'Private instances initiate outbound internet via NAT GW in public subnet'}],
+    pros:['Complete network isolation with no traffic allowed unless explicitly configured','Security Groups provide stateful firewall per instance or service','VPC Flow Logs capture all network flows for security auditing','Private endpoints connect to S3 and DynamoDB without leaving AWS network','Transit Gateway provides a multi-VPC hub replacing complex peering meshes'],
+    cons:['CIDR block is permanent — plan IP ranges carefully before creating','NAT Gateway costs approximately $65/month per AZ pair','VPC Peering is not transitive — use Transit Gateway for many VPCs','PrivateLink setup per service adds operational complexity'],
+    alts:[{n:'PrivateLink (service endpoint)',t:'aws'},{n:'Transit Gateway (multi-VPC)',t:'aws'},{n:'Direct Connect (on-prem)',t:'aws'}],
+    cost:'VPC itself is free. NAT Gateway: $0.045/hour + $0.045/GB processed',
+    when:'Always use a VPC. Put RDS, ElastiCache, and EC2 in private subnets. Use VPC Endpoints for S3 and DynamoDB to avoid NAT costs.',
+    avoid:'No way to avoid — every resource lives in a VPC. Anti-pattern: putting RDS in a public subnet or using the default VPC in production.'
+  }
+};
+
+// ── 10 QUESTIONS (no apostrophes in single-quoted strings) ──
+const QS=[
+{id:'url-short',num:1,name:'URL Shortener',diff:'easy',cat:'Web Service',
+ desc:'Design a scalable URL shortening service like bit.ly. Users paste a long URL and receive a 6-character short code. The system must handle extreme read-to-write asymmetry (10:1), serve redirects globally under 50ms, and support analytics dashboards.',
+ tags:['High Read Throughput','Global Low Latency','Collision-Free IDs','Analytics'],
+ stats:{Users:'500M registered',DAU:'50M active',RPS:'11K reads/sec peak',Storage:'500GB URLs + analytics',Latency:'<50ms P99 redirect','Uptime':'99.99% SLA'},
+ requirements:['Short code must be globally unique — no collisions at 100M entries','Custom aliases: users can pick vanity URLs like /my-promo','Link expiry: TTL support so links expire after X days','Analytics: click count, referrer, geo, and device type per link','Rate limiting: max 100 creates per day for free tier','Redirect type: 301 (cached by browser) or 302 (trackable with analytics)'],
+ auth:['API key for programmatic access (no user account needed)','OAuth 2.0 for dashboard login via Google or GitHub','JWT Bearer token for authenticated shortening operations','Anonymous shortening allowed for public links with no tracking'],
+ scale:'Read-to-write ratio ~10:1. Cache 20% of URLs serving 80% of traffic. Short code space: Base62 with 6 chars equals 56 billion combos — sufficient for 100 years at current growth rate.',
+ components:['route53','cloudfront','waf','alb','lambda','dynamodb','elasticache','s3','cloudwatch'],
+ layout:{route53:{x:50,y:10},cloudfront:{x:50,y:24},waf:{x:22,y:24},alb:{x:50,y:40},lambda:{x:50,y:58},dynamodb:{x:74,y:74},elasticache:{x:28,y:74},s3:{x:74,y:54},cloudwatch:{x:14,y:54}},
+ edges:[{f:'route53',t:'cloudfront',l:'DNS resolve',bi:false},{f:'cloudfront',t:'waf',l:'Inspect req',bi:true},{f:'waf',t:'alb',l:'Allow traffic',bi:false},{f:'alb',t:'lambda',l:'HTTPS request',bi:true},{f:'lambda',t:'elasticache',l:'Cache lookup',bi:true},{f:'lambda',t:'dynamodb',l:'Read/Write URL',bi:true},{f:'lambda',t:'s3',l:'Store analytics',bi:false},{f:'cloudwatch',t:'lambda',l:'Monitor',bi:false}],
+ steps:[{title:'DNS and CDN (Route 53 to CloudFront)',body:'Route 53 resolves to CloudFront. CloudFront caches 301 redirect responses at 450+ edge nodes — 80% of redirects served in under 20ms without hitting origin servers.'},{title:'Security (WAF)',body:'WAF rate-limits to 100 requests per 5 minutes per IP. Blocks bad bots and applies SQL injection prevention rules. Traffic is bidirectional through WAF — both request and response inspected.'},{title:'Load Balancer (ALB)',body:'ALB terminates TLS and routes to Lambda. Stateless short-URL lookup is a perfect fit for Lambda — no server management required.'},{title:'Compute (Lambda)',body:'POST /shorten generates a Base62 ID with 6 chars (56B combos). GET /:code checks Redis first, then DynamoDB, then returns a 301 redirect. Lambda and ALB communicate bidirectionally.'},{title:'Cache (ElastiCache)',body:'Top 10% of URLs drive 90% of traffic. Cache popular codes in Redis with TTL of 24 hours. Lambda and Redis communicate bidirectionally — lookup and response.'},{title:'Database (DynamoDB)',body:'Schema: shortCode (PK) maps to longUrl, userId, createdAt, and clicks. DynamoDB and Lambda communicate bidirectionally for writes and reads.'},{title:'Analytics (S3)',body:'Lambda writes click events async to S3 one-directionally. Never slow the redirect path with analytics processing.'},{title:'Observability (CloudWatch)',body:'CloudWatch monitors Lambda one-directionally. Set alarms for P99 latency over 100ms and DynamoDB throttled requests.'}]
+},
+{id:'video-stream',num:2,name:'Video Streaming',diff:'hard',cat:'Media',
+ desc:'Design a Netflix-scale video streaming platform. Creators upload raw videos up to 50GB. The platform transcodes to multiple resolutions (240p through 4K) and delivers via adaptive bitrate streaming to 500M users globally across mobile, web, and smart TV.',
+ tags:['Video Transcoding','Adaptive Bitrate','HLS Streaming','Global Delivery'],
+ stats:{Users:'500M registered',Streams:'200M daily',RPS:'2300 stream starts/sec',Storage:'Petabytes in S3',Latency:'<2s stream start time','Uptime':'99.95% SLA'},
+ requirements:['Upload directly to S3 via pre-signed URL — no server bottleneck on upload','Transcoding: FFmpeg pipeline producing HLS segments at 6 quality levels','ABR: player auto-switches bitrate based on measured bandwidth','DRM content protection (Widevine, FairPlay, PlayReady) for premium content','Resume: playback position stored server-side per user per video','Thumbnail generation: extract keyframes at 1-second intervals during transcoding','Search: ElasticSearch-backed title, genre, and actor search'],
+ auth:['Email plus password login with bcrypt hashing','Google and Apple SSO via OAuth 2.0','JWT access tokens (15 min) plus Refresh tokens (30 days)','Device limit: max 3 concurrent streams per account','Geo-restriction: content licensing enforced by CloudFront Geo Restriction'],
+ scale:'Video storage doubles every 18 months. Transcode workers auto-scale: 1 worker per 5 queued videos. CDN caches 90% of popular content. Long-tail content under 100 views is served directly from S3 without CDN caching.',
+ components:['route53','cloudfront','waf','alb','ecs','lambda','sqs','s3','rds','elasticache','cloudwatch'],
+ layout:{route53:{x:50,y:8},cloudfront:{x:50,y:20},waf:{x:22,y:20},alb:{x:50,y:34},ecs:{x:34,y:52},lambda:{x:66,y:52},sqs:{x:66,y:67},s3:{x:82,y:38},rds:{x:18,y:67},elasticache:{x:18,y:52},cloudwatch:{x:10,y:38}},
+ edges:[{f:'route53',t:'cloudfront',l:'DNS',bi:false},{f:'cloudfront',t:'s3',l:'HLS segments',bi:false},{f:'waf',t:'alb',l:'Protect',bi:true},{f:'alb',t:'ecs',l:'API calls',bi:true},{f:'ecs',t:'rds',l:'Metadata',bi:true},{f:'ecs',t:'elasticache',l:'Session cache',bi:true},{f:'lambda',t:'sqs',l:'Transcode job',bi:false},{f:'sqs',t:'ecs',l:'Worker poll',bi:true},{f:'ecs',t:'s3',l:'Write HLS',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'Direct Upload to S3',body:'Creator uploads video directly to S3 using a pre-signed URL — bypasses your servers entirely. Lambda triggers on the S3 PutObject event notification.'},{title:'Transcoding Pipeline (SQS to ECS)',body:'Lambda publishes a transcode job to SQS. ECS Fargate workers poll SQS bidirectionally (poll and acknowledge) and run FFmpeg to produce HLS segments at all quality levels.'},{title:'Global Delivery (CloudFront to S3)',body:'CloudFront serves HLS .ts segments from S3 one-directionally to players globally. The ABR player auto-switches quality based on measured connection speed.'},{title:'Metadata (RDS and ECS)',body:'Aurora stores video title, creator, duration, and upload status. ECS reads and writes metadata bidirectionally via the API layer.'},{title:'Session Cache (ElastiCache and ECS)',body:'Redis caches user sessions and trending video metadata. ECS reads from and writes to Redis fully bidirectionally.'},{title:'Observability',body:'CloudWatch monitors ECS tasks one-directionally. Alert if transcode queue depth exceeds 500 — trigger auto-scaling of worker tasks.'}]
+},
+{id:'ride-share',num:3,name:'Ride-Sharing App',diff:'hard',cat:'Real-time',
+ desc:'Design an Uber-scale ride-sharing platform. 5M active drivers send GPS pings every 5 seconds. When a rider requests a trip, the system must find the nearest available driver and confirm a match in under 1 second. Dynamic surge pricing adjusts in real-time based on local supply and demand ratios.',
+ tags:['Real-time GPS Tracking','Sub-second Matching','Surge Pricing','Trip State Machine'],
+ stats:{Riders:'50M users',Drivers:'5M active',Rides:'10M per day',GPS:'1M pings/min',Latency:'<1s match P99','Uptime':'99.99% SLA'},
+ requirements:['GPS ingestion: 5M drivers times 12 pings/min equals 60M location events/min','Driver matching: nearest N drivers within 5km radius in under 10ms','Trip state machine: 7 states with conditional transitions preventing invalid state skips','Surge pricing: supply-demand ratio per 1km geohash cell recalculated every 30s','ETA calculation: real-time traffic-aware routing via external maps API','Driver earnings: per-minute plus per-km billing with surcharge calculation','Push notifications: match offers expire in 8 seconds — driver must accept or decline'],
+ auth:['Rider: phone OTP login via SMS through SNS, then JWT session token','Driver: email plus license verification, then JWT with device binding','In-trip: both parties authenticated via shared tripId token','Payment: PCI-DSS tokenized cards via Stripe vault — raw card data never stored'],
+ scale:'Hotspot problem: NYC Times Square has 1000x density vs rural areas. Use geohash-based sharding in ElastiCache GeoSearch. 60M location events per minute require Kinesis with enough shards for 60MB/s write capacity.',
+ components:['route53','nlb','alb','ecs','dynamodb','elasticache','sqs','kinesis','rds','cloudwatch'],
+ layout:{route53:{x:50,y:8},nlb:{x:28,y:20},alb:{x:72,y:20},ecs:{x:50,y:36},elasticache:{x:18,y:52},dynamodb:{x:50,y:58},rds:{x:82,y:52},kinesis:{x:78,y:70},sqs:{x:22,y:70},cloudwatch:{x:10,y:36}},
+ edges:[{f:'route53',t:'nlb',l:'WS DNS',bi:false},{f:'route53',t:'alb',l:'REST DNS',bi:false},{f:'nlb',t:'ecs',l:'Driver WebSocket',bi:true},{f:'alb',t:'ecs',l:'Rider API',bi:true},{f:'ecs',t:'elasticache',l:'Geo lookup',bi:true},{f:'ecs',t:'dynamodb',l:'Trip state',bi:true},{f:'ecs',t:'rds',l:'User/driver DB',bi:true},{f:'ecs',t:'kinesis',l:'Location stream',bi:false},{f:'kinesis',t:'ecs',l:'Surge events',bi:false},{f:'ecs',t:'sqs',l:'Async tasks',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'WebSocket and REST Split (NLB and ALB)',body:'NLB for driver WebSocket connections — bidirectional, driver sends location and server pushes match offers. ALB for rider REST API to request a ride and view ETA.'},{title:'Driver Matching (ElastiCache and ECS)',body:'Redis GeoSearch is bidirectional: ECS writes driver positions, ECS reads nearest drivers in under 10ms. GEOSEARCH drivers BYRADIUS 5 km ASC returns the sorted list.'},{title:'Trip State Machine (DynamoDB and ECS)',body:'Fully bidirectional: ECS writes state transitions, reads current trip state. Conditional writes on DynamoDB prevent race conditions between concurrent service instances.'},{title:'Location Streaming (ECS to Kinesis)',body:'5M drivers times 12 updates/min equals 60M events/min flowing into Kinesis one-directionally. The surge engine consumer reads from Kinesis as a separate consumer with its own offset.'},{title:'Surge Pricing (Kinesis to ECS)',body:'Kinesis to ECS is a one-way consumer pipeline. The surge engine reads supply-demand ratio per geohash and writes the multiplier to Redis for instant rider-facing pricing.'},{title:'Observability',body:'CloudWatch monitors ECS one-directionally. Match latency P99 alarm at 1 second. Match rate alarm triggers if it drops below 95%.'}]
+},
+{id:'ecommerce',num:4,name:'E-Commerce Platform',diff:'medium',cat:'Web Service',
+ desc:'Design a full Amazon-scale e-commerce platform. 100M product SKUs with real-time inventory. Shopping carts must survive browser refreshes and device switches. Checkout must prevent overselling. Orders fan-out to warehouse, email, and analytics asynchronously.',
+ tags:['Product Catalog','Cart and Checkout','Inventory Lock','Order Pipeline'],
+ stats:{Users:'200M registered',DAU:'10M shoppers',RPS:'115 orders/sec',Storage:'500GB product catalog',Latency:'<200ms product page P99','Uptime':'99.95% SLA'},
+ requirements:['Product catalog: nested categories, multi-image, seller variants for size and color','Search: fuzzy text search plus filters by price, rating, and brand via OpenSearch','Cart: persists across sessions and devices — stored server-side per user','Inventory: optimistic locking UPDATE qty=qty-1 WHERE qty>0 prevents overselling','Flash sales: queue-based checkout handles 10K concurrent buyers for 1 item','Payments: PCI-DSS compliant via Stripe tokenization — no card data stored on your servers','Order tracking: real-time status updates via webhook from shipping carrier'],
+ auth:['Email and password plus Google OAuth via Cognito User Pool','Guest checkout: session token with no account required','Seller portal: separate Cognito User Pool with MFA enforced','API: signed requests for seller integrations','2FA: TOTP required for seller accounts above $10K per month volume'],
+ scale:'Black Friday generates 10x normal traffic. Use SQS as a buffer for payment processing. Pre-warm Lambda and ECS capacity 1 hour before the sale event. Use Aurora read replicas exclusively for product page reads. Flash sale inventory uses Redis DECR (atomic) not SQL UPDATE.',
+ components:['route53','cloudfront','waf','alb','ecs','aurora','dynamodb','elasticache','sqs','sns','s3','cloudwatch'],
+ layout:{route53:{x:50,y:6},cloudfront:{x:35,y:17},waf:{x:65,y:17},alb:{x:50,y:30},ecs:{x:50,y:46},aurora:{x:20,y:62},dynamodb:{x:50,y:68},elasticache:{x:80,y:62},sqs:{x:22,y:79},sns:{x:78,y:79},s3:{x:82,y:40},cloudwatch:{x:10,y:46}},
+ edges:[{f:'route53',t:'cloudfront',l:'DNS',bi:false},{f:'cloudfront',t:'s3',l:'Static assets',bi:false},{f:'cloudfront',t:'alb',l:'Dynamic req',bi:true},{f:'waf',t:'alb',l:'Filter traffic',bi:true},{f:'alb',t:'ecs',l:'Route',bi:true},{f:'ecs',t:'elasticache',l:'Cache',bi:true},{f:'ecs',t:'aurora',l:'Products/Orders',bi:true},{f:'ecs',t:'dynamodb',l:'Cart/Sessions',bi:true},{f:'ecs',t:'sqs',l:'Order events',bi:false},{f:'sqs',t:'sns',l:'Fan-out',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'CDN Layer (CloudFront and S3)',body:'Product images served from S3 via CloudFront one-directionally. WAF and ALB communicate bidirectionally — inspecting both requests and responses.'},{title:'Product Catalog (Aurora and ECS)',body:'Fully bidirectional: ECS reads products and writes orders and inventory updates to Aurora. ElastiCache and ECS also communicate bidirectionally for cached product pages.'},{title:'Cart (DynamoDB and ECS)',body:'Bidirectional: ECS reads cart items and writes new items. DynamoDB TTL auto-deletes abandoned carts after 30 days.'},{title:'Order Pipeline (ECS to SQS to SNS)',body:'Unidirectional pipeline: OrderPlaced event flows from ECS to SQS to SNS fan-out, which delivers to multiple downstream queues for warehouse, email, and analytics.'},{title:'Observability',body:'CloudWatch monitors ECS one-directionally. Alert when checkout failure rate exceeds 0.5% or inventory drops below 10 units for any product.'}]
+},
+{id:'chat-app',num:5,name:'Real-Time Chat',diff:'medium',cat:'Real-time',
+ desc:'Design a WhatsApp-scale messaging platform. Messages must appear on the recipient screen in under 100ms when both are online. Group chats support up to 1000 members. Offline users receive push notifications. Message history is searchable and synced across multiple devices.',
+ tags:['WebSocket Fan-out','Message Persistence','Presence System','Multi-device Sync'],
+ stats:{Users:'1B registered',DAU:'500M active',RPS:'1.15M messages/sec',Storage:'100TB/year',Latency:'<100ms online delivery P99','Uptime':'99.95% SLA'},
+ requirements:['Direct messaging: WebSocket delivery or push notification if offline','Group chats: up to 1000 members — fan-out challenge of 1 message to 1000 deliveries','Message states: sent checkmark, delivered double checkmark, read blue double checkmark','End-to-end encryption: Signal Protocol with keys stored client-only — server sees only ciphertext','Media: images, video, and audio sent as S3 pre-signed URLs embedded in messages','Multi-device sync: messages delivered to all devices of a user','Message search: full-text search over the user own message history via local index'],
+ auth:['Phone number OTP verification via SMS through SNS','Device binding: private key generated on device, public key registered on server','No password — phone plus OTP is the only auth factor','Web client: QR code scan from phone authorizes the browser session','Internal services use IAM roles with no user-facing API keys'],
+ scale:'Group chat fan-out: 1000-member group times 100M messages/day equals 100B deliveries/day. Use server-side fan-out for groups under 100, client-side pull for groups over 100. Presence system: 500M users heartbeating every 10s equals 50M heartbeats/min flowing to Redis.',
+ components:['route53','nlb','ecs','dynamodb','elasticache','sns','kinesis','s3','cloudwatch','lambda'],
+ layout:{route53:{x:50,y:8},nlb:{x:50,y:20},ecs:{x:50,y:36},elasticache:{x:20,y:52},dynamodb:{x:50,y:56},kinesis:{x:82,y:40},lambda:{x:82,y:58},sns:{x:82,y:73},s3:{x:28,y:73},cloudwatch:{x:10,y:36}},
+ edges:[{f:'route53',t:'nlb',l:'DNS to WS',bi:false},{f:'nlb',t:'ecs',l:'WebSocket',bi:true},{f:'ecs',t:'elasticache',l:'Presence and routing',bi:true},{f:'ecs',t:'dynamodb',l:'Store messages',bi:true},{f:'ecs',t:'kinesis',l:'Message stream',bi:false},{f:'kinesis',t:'lambda',l:'Async process',bi:false},{f:'lambda',t:'sns',l:'Push notify',bi:false},{f:'ecs',t:'s3',l:'Media files',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'WebSocket Layer (NLB and ECS)',body:'NLB and ECS communicate bidirectionally — persistent WebSocket. Client sends message, server pushes delivery receipt. Server registry in Redis maps userId to serverId for routing.'},{title:'Presence and Routing (ElastiCache and ECS)',body:'Bidirectional: ECS writes presence via SETEX user:online 30, reads server routing for cross-server delivery via Redis Pub/Sub channels.'},{title:'Message Storage (DynamoDB and ECS)',body:'Bidirectional: ECS writes new messages, reads history on conversation open. ULID sort key gives time-sorted retrieval without a secondary index.'},{title:'Async Pipeline (Kinesis to Lambda to SNS)',body:'One-way pipeline: message flows to Kinesis, Lambda processes it, SNS delivers the push notification. This async path never slows the primary delivery.'},{title:'Media (ECS to S3)',body:'ECS generates pre-signed URLs for direct client-to-S3 upload. S3 is write-only from this service perspective, keeping large files off the chat servers.'},{title:'Observability',body:'CloudWatch monitors ECS one-directionally. Alert when message delivery failure rate exceeds 0.01%.'}]
+},
+{id:'notification',num:6,name:'Notification System',diff:'medium',cat:'Platform',
+ desc:'Design a Meta-scale notification delivery platform. Every user action triggers notifications across 4 channels: push, email, SMS, and in-app. Users configure per-channel preferences. Marketing notifications must never interfere with OTP or security alert delivery.',
+ tags:['Multi-Channel Delivery','Priority Queuing','Deduplication','User Preferences'],
+ stats:{Users:'1B users',Volume:'10B notifications/day',RPS:'115K notifications/sec peak',Storage:'Delivery logs plus preferences',OTP:'<3s latency','Social':'<30s latency'},
+ requirements:['4 channels: push (APNs/FCM), email (SES), SMS (SNS), and in-app (WebSocket)','Priority tiers: CRITICAL for OTP and security, HIGH for social, LOW for marketing','User opt-out: per-channel per-notification-type preferences stored in DynamoDB','Deduplication: same event must not send duplicate notifications — idempotency window 1 hour','Rate limiting: max 3 SMS per hour per user to prevent spam','Scheduled delivery: send marketing emails at 9am in the user local timezone','Bounce handling: email bounces deactivate the email channel for that user'],
+ auth:['Internal service-to-service: IAM roles with no external API key','Publisher API: AWS SigV4 signed requests for internal microservices','Admin portal: Cognito with MFA for notification template management','Webhook callbacks: HMAC-SHA256 signed payloads for merchant notification hooks'],
+ scale:'Thundering herd: a user with 10M followers posts and triggers 10M notifications as a burst. Use Kinesis for ingestion to absorb the burst, then SQS workers for controlled fan-out. Marketing blasts: spread delivery over 4 hours to flatten load on email infrastructure.',
+ components:['alb','lambda','eventbridge','sqs','ecs','sns','dynamodb','elasticache','cloudwatch','kinesis'],
+ layout:{alb:{x:50,y:8},lambda:{x:50,y:22},elasticache:{x:22,y:36},eventbridge:{x:78,y:36},sqs:{x:50,y:50},ecs:{x:50,y:65},sns:{x:76,y:78},dynamodb:{x:24,y:78},kinesis:{x:82,y:52},cloudwatch:{x:10,y:52}},
+ edges:[{f:'alb',t:'lambda',l:'Notification API',bi:true},{f:'lambda',t:'elasticache',l:'Dedup check',bi:true},{f:'lambda',t:'eventbridge',l:'Route event',bi:false},{f:'eventbridge',t:'sqs',l:'Channel queues',bi:false},{f:'sqs',t:'ecs',l:'Workers consume',bi:true},{f:'ecs',t:'sns',l:'Push/SMS',bi:false},{f:'ecs',t:'dynamodb',l:'Log delivery',bi:true},{f:'kinesis',t:'lambda',l:'High-vol stream',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'Notification API (ALB and Lambda)',body:'ALB and Lambda communicate bidirectionally — request in, response out. Lambda checks user opt-outs in DynamoDB, runs deduplication via Redis SETNX, then routes to EventBridge.'},{title:'Deduplication (ElastiCache and Lambda)',body:'Bidirectional: Lambda reads the dedup key, writes a new key if not present. Atomic SETNX prevents duplicate notifications from reaching users.'},{title:'Routing (EventBridge to SQS)',body:'One-way: EventBridge evaluates JSON rules and fans out to priority SQS queues — HIGH, MEDIUM, and LOW.'},{title:'Workers (SQS and ECS)',body:'Bidirectional: ECS workers poll SQS and delete messages on successful delivery. Dead Letter Queue captures failures for inspection and retry.'},{title:'Delivery (ECS to SNS and DynamoDB)',body:'ECS to SNS is one-way send. ECS and DynamoDB are bidirectional — writes delivery log, reads user channel preferences before sending.'},{title:'Observability',body:'CloudWatch monitors ECS one-directionally. Alert when delivery failure rate exceeds 1% or email bounce rate exceeds 5%.'}]
+},
+{id:'rate-limiter',num:7,name:'API Rate Limiter',diff:'medium',cat:'Platform',
+ desc:'Design a distributed rate limiting service for a multi-tenant API platform. Every request must be checked in under 5ms. Different customer tiers have different limits. The system must be accurate under concurrent requests and resilient to Redis failures.',
+ tags:['Token Bucket Algorithm','Sliding Window Counter','Tier-based Limits','<5ms Overhead'],
+ stats:{Customers:'50K API customers',Volume:'100K req/sec sustained',Peak:'500K req/sec viral event',Storage:'Counters in Redis with TTL',Overhead:'<5ms P99 per request','Uptime':'99.99% — fail open'},
+ requirements:['Free tier: 100 req/min and 10K req/day','Pro tier: 1000 req/min and 100K req/day','Enterprise: custom limits negotiated per customer','Burst allowance: allow 2x limit for 10 seconds before throttling kicks in','HTTP 429 with Retry-After header on throttle response','Distributed: limits shared across all API gateway instances','Failover: if Redis is down, fail open (allow requests) rather than blocking all traffic'],
+ auth:['API key in Authorization header: Bearer sk_live_xxxx format','API key to customer_id lookup cached in Lambda memory with 60s TTL','Admin portal: Cognito with MFA to manage keys and limits','Rate limit bypass: internal traffic uses IAM role with no API key required'],
+ scale:'Token bucket in Redis Lua script runs atomically with no race conditions. At 100K req/sec, Redis handles approximately 1M ops/sec (check plus decrement). ElastiCache cluster mode with 3 shards handles this throughput. Lua script runs atomically on one shard per key.',
+ components:['route53','cloudfront','waf','alb','apigateway','lambda','elasticache','dynamodb','cloudwatch'],
+ layout:{route53:{x:50,y:8},cloudfront:{x:50,y:20},waf:{x:20,y:28},alb:{x:50,y:33},apigateway:{x:76,y:42},lambda:{x:50,y:52},elasticache:{x:26,y:65},dynamodb:{x:74,y:65},cloudwatch:{x:10,y:52}},
+ edges:[{f:'route53',t:'cloudfront',l:'DNS',bi:false},{f:'cloudfront',t:'alb',l:'Forward',bi:true},{f:'waf',t:'alb',l:'IP block',bi:true},{f:'alb',t:'apigateway',l:'Route',bi:true},{f:'apigateway',t:'lambda',l:'Auth and invoke',bi:true},{f:'lambda',t:'elasticache',l:'Token bucket',bi:true},{f:'lambda',t:'dynamodb',l:'Tier config',bi:true},{f:'cloudwatch',t:'lambda',l:'Throttle metrics',bi:false}],
+ steps:[{title:'WAF Coarse Rate Limiting',body:'WAF rate-limits per IP — first line of defense. WAF and ALB communicate bidirectionally — inspecting both request and response.'},{title:'API Gateway Tier-level Throttling',body:'API Gateway and Lambda communicate bidirectionally — invoke request and response. Throttling is applied before Lambda invocation using usage plan limits.'},{title:'Token Bucket in Redis (Lambda and ElastiCache)',body:'Fully bidirectional: Lambda checks token count and decrements atomically via Lua script. Under 1ms round trip to Redis cluster.'},{title:'Tier Config (Lambda and DynamoDB)',body:'Bidirectional: Lambda reads tier config on cold start and writes rate limit adjustments. Config cached in Lambda memory for 60 seconds.'},{title:'Observability',body:'CloudWatch monitors Lambda one-directionally. Track throttled percentage per customer and rate limiter latency P99 which should stay under 2ms.'}]
+},
+{id:'search-auto',num:8,name:'Search Autocomplete',diff:'medium',cat:'Search',
+ desc:'Design a Google Suggest-scale typeahead system. Suggestions must appear within 100ms as the user types. Results blend global trending queries, personal history, and semantic similarity. The trie must support 50+ languages and update with trending queries every 5 minutes without downtime.',
+ tags:['Prefix Trie in Redis','<100ms P99 E2E','Trending plus Personalization','Multi-language'],
+ stats:{Users:'2B monthly',Queries:'10B per day',RPS:'115K autocomplete req/sec',Storage:'50GB Redis RAM per language',Latency:'<100ms P99 including network','Uptime':'99.99% SLA'},
+ requirements:['Prefix matching: every keystroke triggers a new query with 100ms client-side debounce','Suggestion ranking: score equals global frequency times recency boost times personal boost','Trending: queries spiking in the last 60 minutes surfaced regardless of all-time frequency','Personalization: the user last 30 searches boost matching suggestions','Spell correction: suggest corrections for common misspellings within edit distance 1-2','Profanity filter: blocklist applied at trie build time, not at query time','Multi-language: separate trie per language or locale detected from Accept-Language header'],
+ auth:['Anonymous: no auth required since suggestions are public data','Logged-in: user_id from JWT activates the personalization layer','Personalization data: stored in DynamoDB and read at suggestion time','Search history opt-out: users can disable personalization for GDPR compliance'],
+ scale:'Hottest query problem: a trending event triggers 1M req/sec for one prefix. CloudFront caches this at the edge. Trie size: 50GB times 50 languages equals 2.5TB Redis cluster. Use consistent hashing to shard by language prefix.',
+ components:['route53','cloudfront','alb','lambda','elasticache','dynamodb','kinesis','s3','ecs','cloudwatch'],
+ layout:{route53:{x:50,y:8},cloudfront:{x:50,y:20},alb:{x:50,y:33},lambda:{x:50,y:48},elasticache:{x:24,y:62},dynamodb:{x:76,y:62},kinesis:{x:84,y:38},ecs:{x:84,y:54},s3:{x:18,y:76},cloudwatch:{x:10,y:48}},
+ edges:[{f:'route53',t:'cloudfront',l:'DNS',bi:false},{f:'cloudfront',t:'alb',l:'Cache miss',bi:true},{f:'alb',t:'lambda',l:'Suggest API',bi:true},{f:'lambda',t:'elasticache',l:'Trie lookup',bi:true},{f:'lambda',t:'dynamodb',l:'User history',bi:true},{f:'kinesis',t:'ecs',l:'Update trie',bi:false},{f:'ecs',t:'elasticache',l:'Write trie',bi:false},{f:'ecs',t:'s3',l:'Persist trie',bi:true},{f:'cloudwatch',t:'lambda',l:'Monitor',bi:false}],
+ steps:[{title:'Edge Cache (CloudFront and ALB)',body:'CloudFront and ALB are bidirectional — request forwarded on cache miss, response cached and returned. 70% of queries served from edge in under 20ms.'},{title:'Suggest API (ALB and Lambda)',body:'Bidirectional: request in, suggestions response out. Lambda queries the Redis trie prefix, merges personalization scores, and returns top 10.'},{title:'Trie in Redis (Lambda and ElastiCache)',body:'Fully bidirectional: Lambda reads ZREVRANGE for prefix lookups, writes score increments via ZINCRBY. Sub-millisecond sorted set operations.'},{title:'User History (Lambda and DynamoDB)',body:'Bidirectional: Lambda reads past search history for personalization boosting and writes new queries to the history store.'},{title:'Trie Updates (Kinesis to ECS to Redis)',body:'One-way pipeline: query events flow to Kinesis, ECS batch processor consumes them and updates the Redis trie every 5 minutes.'},{title:'Persistence (ECS and S3)',body:'ECS writes the full trie to S3 every 24 hours and reads it back on cold start to pre-warm Redis. This prevents hours of slow autocomplete after a Redis flush.'}]
+},
+{id:'social-feed',num:9,name:'Social Media Feed',diff:'hard',cat:'Social',
+ desc:'Design an Instagram-scale social feed system. The core challenge is the celebrity problem: when a celebrity with 180M followers posts, a naive fan-out-on-write would trigger 180M DynamoDB writes in seconds. The feed must appear ranked by an ML relevance model, not chronologically.',
+ tags:['Fan-out Write vs Read','Celebrity Problem','ML Feed Ranking','Infinite Scroll'],
+ stats:{Users:'1B registered',DAU:'500M active',Posts:'100M per day',Storage:'1TB feed index per day',Latency:'<200ms feed load P99','Uptime':'99.95% SLA'},
+ requirements:['Fan-out on write for regular users under 10K followers: push postId to each follower feed list','Fan-out on read for celebrities over 10K followers: merge at read time to avoid massive write amplification','Feed ranking: ML model scores posts by recency, engagement velocity, friendship strength, and media type preference','Infinite scroll: cursor-based pagination — no OFFSET which is too slow at scale','Story and Reel vs Post: separate feeds merged at the API layer','Mute and Block: filtered before serving but after storage','Ad injection: every Nth post replaced with a sponsored post from the Ads service'],
+ auth:['Email plus Google and Apple OAuth via Cognito User Pool','Access token: JWT valid 1 hour plus Refresh token valid 30 days','Private accounts: follow request flow — only approved followers see the feed','API rate limit: 60 feed fetches per hour per user to prevent scraping','Content reporting: authenticated endpoint with reports stored for ML trust and safety'],
+ scale:'Write amplification: 1 post from a regular user with 1K followers equals 1K DynamoDB writes. Use SQS to buffer fan-out workers. Pre-compute feeds during low-traffic periods. Re-rank top 20 posts per user using ML model on ECS (SageMaker-trained, online inference).',
+ components:['route53','cloudfront','alb','ecs','aurora','dynamodb','elasticache','sqs','kinesis','s3','cloudwatch','lambda'],
+ layout:{route53:{x:50,y:5},cloudfront:{x:50,y:15},alb:{x:50,y:27},ecs:{x:50,y:42},elasticache:{x:18,y:57},aurora:{x:50,y:60},dynamodb:{x:82,y:57},kinesis:{x:82,y:38},lambda:{x:82,y:68},sqs:{x:18,y:70},s3:{x:50,y:76},cloudwatch:{x:10,y:42}},
+ edges:[{f:'route53',t:'cloudfront',l:'DNS',bi:false},{f:'cloudfront',t:'alb',l:'API req',bi:true},{f:'alb',t:'ecs',l:'Feed service',bi:true},{f:'ecs',t:'elasticache',l:'Feed cache',bi:true},{f:'ecs',t:'aurora',l:'Post content',bi:true},{f:'ecs',t:'dynamodb',l:'User feeds',bi:true},{f:'ecs',t:'kinesis',l:'Post events',bi:false},{f:'kinesis',t:'lambda',l:'Fan-out logic',bi:false},{f:'lambda',t:'sqs',l:'Write queue',bi:false},{f:'sqs',t:'ecs',l:'Workers',bi:true},{f:'ecs',t:'s3',l:'Media',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'Fan-out Decision (ECS to Kinesis)',body:'One-way: post created, flows to Kinesis. Lambda reads and decides: regular user under 10K followers triggers fan-out on write. Celebrity skips fan-out entirely.'},{title:'Fan-out on Write (Lambda to SQS to ECS)',body:'One-way pipeline: Lambda pushes postId to SQS, ECS workers write to each follower DynamoDB feed row. Async so posting is never slowed by fan-out volume.'},{title:'Feed Storage (ECS and DynamoDB)',body:'Fully bidirectional: workers write feed entries, feed service reads the user feed. Pre-computed for regular users. Empty for celebrities.'},{title:'Celebrity Problem — Read-time Merge',body:'At feed load time, ECS queries celebrity posts live via Aurora bidirectionally and merges with the pre-computed feed from DynamoDB.'},{title:'Feed Cache (ECS and ElastiCache)',body:'Bidirectional: ECS writes the ranked top-50 to Redis with TTL of 10 minutes, reads on subsequent requests. Cache hit rate target is above 85%.'},{title:'Media (ECS to S3)',body:'One-way: ECS stores media references. CloudFront serves media globally with Lambda@Edge resizing images per device type.'}]
+},
+{id:'payment',num:10,name:'Payment Processing',diff:'hard',cat:'Financial',
+ desc:'Design a Stripe-scale payment processing platform. Hardest problems: preventing double charges (network retries must be idempotent), maintaining a consistent double-entry ledger (DEBIT plus CREDIT always balance), and achieving 99.999% uptime (5.26 minutes downtime per year allowed). PCI DSS Level 1 compliance required.',
+ tags:['Idempotency Keys','Double-Entry Ledger','PCI DSS Level 1','99.999% Uptime'],
+ stats:{Merchants:'Millions',Volume:'10M payments/day',Peak:'10K payments/sec holiday',Storage:'Immutable ledger for years',Latency:'<2s confirmation P99','Uptime':'99.999% SLA'},
+ requirements:['Idempotency: every charge request has an Idempotency-Key — retries return the same result','Double-entry ledger: every payment equals DEBIT customer plus CREDIT merchant in one atomic transaction','Card tokenization: raw card data never touches your servers — Stripe.js sends directly to PCI vault','Refunds: reverse original transaction by adding new rows — original rows never modified','Webhook delivery: POST to merchant endpoint with HMAC signature, retry with exponential backoff','Reconciliation: daily balance check — sum of debits must equal sum of credits exactly','Fraud detection: ML model scores each payment in under 100ms using velocity checks and device fingerprint'],
+ auth:['Merchant: API key pair (publishable plus secret) — secret key hashed and stored, never reversible','Customer-facing: Stripe.js tokenizes card and sends token to your server — card data never hits your backend','Webhook validation: HMAC-SHA256 signature on payload — reject if signature is invalid','Admin: SSO plus MFA plus hardware key (YubiKey) required for production access','PCI DSS: access to cardholder data requires two-factor auth and is logged in CloudTrail'],
+ scale:'Idempotency at scale: 10M payments/day times 1.5 retries average equals 15M Redis operations per day for dedup. Aurora Multi-AZ ensures zero data loss. If primary fails, standby promoted in under 120s. During promotion, payments queue in SQS and process after promotion completes. RTO: 2 minutes. RPO: zero.',
+ components:['route53','waf','alb','ecs','aurora','dynamodb','sqs','sns','elasticache','cloudtrail','cloudwatch','vpc'],
+ layout:{route53:{x:50,y:6},waf:{x:50,y:17},alb:{x:50,y:29},vpc:{x:14,y:40},ecs:{x:50,y:42},elasticache:{x:18,y:58},aurora:{x:50,y:60},dynamodb:{x:82,y:58},sqs:{x:28,y:76},sns:{x:72,y:76},cloudtrail:{x:82,y:40},cloudwatch:{x:10,y:55}},
+ edges:[{f:'route53',t:'waf',l:'DNS',bi:false},{f:'waf',t:'alb',l:'PCI filter',bi:true},{f:'alb',t:'ecs',l:'Payment API',bi:true},{f:'vpc',t:'ecs',l:'Isolation',bi:false},{f:'ecs',t:'elasticache',l:'Idempotency key',bi:true},{f:'ecs',t:'aurora',l:'Ledger DB',bi:true},{f:'ecs',t:'dynamodb',l:'Payment state',bi:true},{f:'ecs',t:'sqs',l:'Async notify',bi:false},{f:'sqs',t:'sns',l:'Fan-out',bi:false},{f:'cloudtrail',t:'aurora',l:'Audit log',bi:false},{f:'cloudwatch',t:'ecs',l:'Monitor',bi:false}],
+ steps:[{title:'Security (WAF and ALB and VPC)',body:'WAF and ALB communicate bidirectionally — inspecting request and response. VPC provides network isolation one-directionally wrapping ECS. All services live in private subnets.'},{title:'Idempotency (ECS and ElastiCache)',body:'Bidirectional: ECS checks Redis SETNX idempotency key before processing. If key exists, return cached response without charging. If new, process and cache result.'},{title:'Ledger (ECS and Aurora)',body:'Bidirectional: ECS writes double-entry journal (DEBIT plus CREDIT in one transaction) and reads for reconciliation. Aurora Multi-AZ guarantees zero data loss.'},{title:'Payment State (ECS and DynamoDB)',body:'Bidirectional: ECS reads current state and writes transitions with conditional writes. Prevents two Lambda invocations from processing the same payment twice.'},{title:'Notifications (ECS to SQS to SNS)',body:'One-way pipeline after payment captured: SQS buffers webhook delivery, SNS fans out to merchant endpoint and customer receipt email.'},{title:'Compliance (CloudTrail and CloudWatch)',body:'CloudTrail logs every API call one-directionally to S3. Required for PCI DSS Level 1. Use S3 Object Lock WORM configuration for tamper-proof immutable logs.'}]
+}
+];
+
+// ── STATE ──
+let curQ=null,compOrder=[],revIdx=-1,completedSet=new Set(),nodePos={};
+let panX=0,panY=0,zoom=1,isPanning=false,pSX=0,pSY=0,pSPX=0,pSPY=0;
+let sbOpen=true,briefOpen=false;
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded',()=>{
+  buildSidebar();
+  setupPan();
+  loadQ(QS[0]);
+});
+
+// ── SIDEBAR ──
+function buildSidebar(){
+  document.getElementById('qlist').innerHTML=QS.map(q=>`
+    <div class="qi" id="qi-${q.id}" onclick="loadQ(QS.find(x=>x.id==='${q.id}'))">
+      <span class="qi-n">Q${q.num}</span>
+      <span class="qi-name">${q.name}
+        <span class="dbadge dbadge-${q.diff}">${q.diff.toUpperCase()}</span>
+        <span class="qi-done" id="qidone-${q.id}">${completedSet.has(q.id)?'✓':''}</span>
+      </span>
+    </div>`).join('');
+}
+
+function toggleSidebar(){
+  sbOpen=!sbOpen;
+  const sb=document.getElementById('sidebar');
+  const tog=document.getElementById('sb-toggle');
+  sb.classList.toggle('collapsed',!sbOpen);
+  tog.textContent=sbOpen?'‹':'›';
+  tog.style.left=sbOpen?'240px':'0px';
+  setTimeout(()=>{if(curQ)redrawEdges();},300);
+}
+
+// Position toggle button
+function updateTogglePos(){
+  const tog=document.getElementById('sb-toggle');
+  tog.style.left=sbOpen?'240px':'0px';
+}
+
+// ── BRIEF ──
+function toggleBrief(){
+  briefOpen=!briefOpen;
+  document.getElementById('brief-body').classList.toggle('show',briefOpen);
+  document.getElementById('brief-chevron').classList.toggle('open',briefOpen);
+}
+
+function buildBriefContent(q){
+  const s=q.stats||{};
+  const cols=['c-green','c-amber','c-cyan','c-purple','c-amber','c-cyan'];
+  const statsHtml=Object.keys(s).length?`
+    <div class="bsec">
+      <div class="bsec-t">Scale Stats</div>
+      <div class="bstat-grid">${Object.entries(s).map(([k,v],i)=>`
+        <div class="bstat"><span class="bstat-lbl">${k}</span><span class="bstat-val ${cols[i%6]}">${v}</span></div>`).join('')}
+      </div>
+    </div>`:'';
+  const reqHtml=(q.requirements||[]).length?`
+    <div class="bsec">
+      <div class="bsec-t">Functional Requirements</div>
+      <ul class="breq-list">${q.requirements.map(r=>`<li>${r}</li>`).join('')}</ul>
+    </div>`:'';
+  const authHtml=(q.auth||[]).length?`
+    <div class="bsec">
+      <div class="bsec-t">Authentication and Security</div>
+      <div class="bauth-wrap">${q.auth.map(a=>`<span class="bauth-chip">🔐 ${a}</span>`).join('')}</div>
+    </div>`:'';
+  const scaleHtml=q.scale?`
+    <div class="bsec">
+      <div class="bsec-t">Scale and Design Decisions</div>
+      <div class="btext">${q.scale}</div>
+    </div>`:'';
+  const tagsHtml=(q.tags||[]).length?`
+    <div class="bsec">
+      <div class="bsec-t">Key Challenges</div>
+      <div class="btags-wrap">${q.tags.map(t=>`<span class="btag">${t}</span>`).join('')}</div>
+    </div>`:'';
+  const descHtml=`<div class="bsec"><div class="bsec-t">Problem Statement</div><div class="btext">${q.desc}</div></div>`;
+  return descHtml+statsHtml+reqHtml+authHtml+scaleHtml+tagsHtml+
+    '<div class="brief-hint">💡 Click any node on the canvas to explore why that AWS service is used, how it works, its trade-offs, and alternatives.</div>';
+}
+
+// ── LOAD QUESTION ──
+function loadQ(q){
+  curQ=q; revIdx=-1; compOrder=[...q.components];
+  document.querySelectorAll('.qi').forEach(e=>e.classList.remove('active'));
+  const qi=document.getElementById('qi-'+q.id);
+  if(qi)qi.classList.add('active');
+  document.getElementById('hdr-q').textContent=`Q${q.num}: ${q.name}`;
+
+  // Brief bar
+  const brief=document.getElementById('brief');
+  brief.style.display='block';
+  briefOpen=false;
+  document.getElementById('brief-body').classList.remove('show');
+  document.getElementById('brief-chevron').classList.remove('open');
+  document.getElementById('brief-title').textContent=`Q${q.num}: ${q.name}`;
+  const dp=document.getElementById('brief-dpill');
+  dp.textContent=q.diff.toUpperCase();
+  dp.className='dpill dpill-'+q.diff;
+  document.getElementById('brief-catpill').textContent=q.cat;
+  document.getElementById('brief-body').innerHTML=buildBriefContent(q);
+
+  document.getElementById('canvas-ph').style.display='none';
+  panX=0;panY=0;zoom=1;applyTransform();
+  buildCanvas(q);
+  buildWalkthrough(q);
+
+  document.getElementById('rbody-detail').innerHTML=`
+    <div class="dc-empty">
+      <div class="dc-empty-icon">🖱️</div>
+      <div class="dc-empty-t">Click any component</div>
+      <div class="dc-empty-s">All ${q.components.length} AWS services are ghosted on the canvas.<br><br>📋 Click the brief bar above for full requirements, scale stats, and auth details.<br><br>🖱️ Click a node or use Next to explore step by step.<br><br>✋ Drag canvas background to pan. Scroll to zoom. Drag nodes to rearrange.</div>
+    </div>`;
+
+  document.getElementById('flow-cur').textContent='-- ready';
+  document.getElementById('flow-sub').textContent='Click a node or use Next';
+  document.getElementById('btn-prev').disabled=true;
+  const nb=document.getElementById('btn-next');
+  nb.textContent='Next'; nb.className='fbtn fbtn-a';
+  document.getElementById('step-badge').style.display='block';
+  document.getElementById('step-cur').textContent='0';
+  document.getElementById('step-tot').textContent=q.components.length;
+  switchTab('detail');
+  updateTogglePos();
+}
+
+// ── PAN + ZOOM ──
+function setupPan(){
+  const area=document.getElementById('canvas-area');
+  area.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const rect=area.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const delta=e.deltaY>0?0.9:1.1;
+    const nz=Math.min(3,Math.max(0.2,zoom*delta));
+    panX=mx-(mx-panX)*(nz/zoom);
+    panY=my-(my-panY)*(nz/zoom);
+    zoom=nz; applyTransform();
+  },{passive:false});
+
+  area.addEventListener('mousedown',e=>{
+    const tgt=e.target;
+    const isBg=tgt===area||tgt.classList.contains('dot-bg')||tgt.tagName==='svg'||tgt.tagName==='SVG'||tgt.id==='canvas-world'||tgt.classList.contains('canvas-world');
+    if(e.button===1||(e.button===0&&isBg)){
+      e.preventDefault();
+      isPanning=true; pSX=e.clientX; pSY=e.clientY; pSPX=panX; pSPY=panY;
+      area.style.cursor='grabbing';
+    }
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!isPanning)return;
+    panX=pSPX+(e.clientX-pSX); panY=pSPY+(e.clientY-pSY);
+    applyTransform();
+  });
+  window.addEventListener('mouseup',()=>{
+    if(isPanning){isPanning=false; document.getElementById('canvas-area').style.cursor='';}
+  });
+}
+
+function applyTransform(){
+  document.getElementById('canvas-world').style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
+  const zt=document.getElementById('zc-pct');
+  if(zt)zt.textContent=Math.round(zoom*100)+'%';
+}
+
+function zoomIn(){
+  const a=document.getElementById('canvas-area');
+  const cx=a.clientWidth/2,cy=a.clientHeight/2;
+  const nz=Math.min(3,zoom*1.15);
+  panX=cx-(cx-panX)*(nz/zoom); panY=cy-(cy-panY)*(nz/zoom);
+  zoom=nz; applyTransform();
+}
+function zoomOut(){
+  const a=document.getElementById('canvas-area');
+  const cx=a.clientWidth/2,cy=a.clientHeight/2;
+  const nz=Math.max(0.2,zoom/1.15);
+  panX=cx-(cx-panX)*(nz/zoom); panY=cy-(cy-panY)*(nz/zoom);
+  zoom=nz; applyTransform();
+}
+function fitView(){
+  if(!curQ){panX=0;panY=0;zoom=1;applyTransform();return;}
+  const a=document.getElementById('canvas-area');
+  const W=a.clientWidth,H=a.clientHeight;
+  const xs=Object.values(nodePos).map(p=>p.x);
+  const ys=Object.values(nodePos).map(p=>p.y);
+  const minX=Math.min(...xs)-70,maxX=Math.max(...xs)+70;
+  const minY=Math.min(...ys)-60,maxY=Math.max(...ys)+60;
+  zoom=Math.min(2,Math.min(W*0.9/(maxX-minX),H*0.9/(maxY-minY)));
+  panX=W/2-((minX+maxX)/2)*zoom;
+  panY=H/2-((minY+maxY)/2)*zoom;
+  applyTransform();
+}
+
+// ── CANVAS BUILD ──
+function buildCanvas(q){
+  document.getElementById('nodes-layer').innerHTML='';
+  document.getElementById('svg-canvas').innerHTML='';
+  const a=document.getElementById('canvas-area');
+  const W=a.clientWidth,H=a.clientHeight;
+  nodePos={};
+  q.components.forEach(cid=>{
+    const lay=q.layout[cid]||{x:50,y:50};
+    nodePos[cid]={x:lay.x/100*900,y:lay.y/100*650};
+  });
+  // Auto-fit
+  const xs=Object.values(nodePos).map(p=>p.x);
+  const ys=Object.values(nodePos).map(p=>p.y);
+  const minX=Math.min(...xs)-70,maxX=Math.max(...xs)+70;
+  const minY=Math.min(...ys)-60,maxY=Math.max(...ys)+60;
+  zoom=Math.min(1.4,Math.min(W*0.88/(maxX-minX),H*0.88/(maxY-minY)));
+  panX=W/2-((minX+maxX)/2)*zoom;
+  panY=H/2-((minY+maxY)/2)*zoom;
+  applyTransform();
+
+  q.components.forEach(cid=>{
+    const c=COMP[cid]; if(!c)return;
+    const nd=document.createElement('div');
+    nd.className='nd ghost'; nd.id='nd-'+cid;
+    const pos=nodePos[cid];
+    nd.style.left=pos.x+'px'; nd.style.top=pos.y+'px';
+    nd.innerHTML=`<div class="nd-ring"></div><div class="nd-inner">
+      <span class="nd-icon">${c.icon}</span>
+      <span class="nd-label">${c.name}</span>
+      <span class="nd-sub">${c.cat}</span></div>`;
+    nd.addEventListener('mousedown',mkDragHandler(cid));
+    document.getElementById('nodes-layer').appendChild(nd);
+  });
+  setTimeout(()=>redrawEdges(),60);
+  setTimeout(()=>redrawEdges(),300);
+}
+
+// ── DRAG (click vs drag discrimination, zoom-aware) ──
+function mkDragHandler(cid){
+  return function(e){
+    if(e.button!==0)return;
+    e.stopPropagation(); e.preventDefault();
+    const sx=e.clientX,sy=e.clientY,snx=nodePos[cid].x,sny=nodePos[cid].y;
+    let moved=false;
+    function onMove(me){
+      const dx=me.clientX-sx,dy=me.clientY-sy;
+      if(!moved&&Math.sqrt(dx*dx+dy*dy)>5){
+        moved=true;
+        const n=document.getElementById('nd-'+cid);
+        if(n)n.classList.add('dragging');
+      }
+      if(moved){
+        const nx=snx+dx/zoom,ny=sny+dy/zoom;
+        nodePos[cid]={x:nx,y:ny};
+        const n=document.getElementById('nd-'+cid);
+        if(n){n.style.left=nx+'px';n.style.top=ny+'px';}
+        redrawEdges();
+      }
+    }
+    function onUp(){
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      const n=document.getElementById('nd-'+cid);
+      if(n)n.classList.remove('dragging');
+      if(!moved)activateNode(cid);
+    }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  };
+}
+
+// ── NODE ACTIVATION ──
+function activateNode(cid){
+  const idx=compOrder.indexOf(cid); if(idx<0)return;
+  for(let i=0;i<=idx;i++)revealNode(compOrder[i]);
+  revIdx=idx;
+  setActive(cid); showDetail(cid); updateFlowStrip(); redrawEdges(); updateBadge();
+}
+function revealNode(cid){
+  const n=document.getElementById('nd-'+cid); if(!n)return;
+  if(n.classList.contains('ghost')){
+    n.classList.remove('ghost');
+    n.classList.add('lit','bounce-in');
+    setTimeout(()=>n.classList.remove('bounce-in'),500);
+  }
+}
+function setActive(cid){
+  document.querySelectorAll('.nd').forEach(n=>{
+    n.classList.remove('active');
+    if(!n.classList.contains('ghost'))n.classList.add('lit');
+  });
+  const n=document.getElementById('nd-'+cid);
+  if(n){n.classList.remove('lit','ghost');n.classList.add('active');}
+}
+function nextNode(){
+  if(!curQ)return;
+  if(revIdx<compOrder.length-1){
+    revIdx++;
+    const cid=compOrder[revIdx];
+    revealNode(cid); setActive(cid); showDetail(cid); updateFlowStrip(); redrawEdges(); updateBadge();
+  } else markComplete();
+}
+function prevNode(){
+  if(!curQ||revIdx<=0)return;
+  revIdx--;
+  const cid=compOrder[revIdx];
+  setActive(cid); showDetail(cid); updateFlowStrip(); redrawEdges();
+}
+function updateFlowStrip(){
+  const cid=compOrder[revIdx];
+  const c=COMP[cid];
+  document.getElementById('flow-cur').textContent=c?c.icon+' '+c.name:'--';
+  document.getElementById('flow-sub').textContent=c?c.full:'';
+  document.getElementById('btn-prev').disabled=revIdx<=0;
+  const nb=document.getElementById('btn-next');
+  if(revIdx>=compOrder.length-1){nb.textContent='Complete';nb.className='fbtn fbtn-green';}
+  else{nb.textContent='Next';nb.className='fbtn fbtn-a';}
+}
+function updateBadge(){document.getElementById('step-cur').textContent=revIdx+1;}
+
+// ── EDGE DRAWING ──
+function mkSvg(tag){return document.createElementNS('http://www.w3.org/2000/svg',tag);}
+function redrawEdges(){
+  if(!curQ)return;
+  const svg=document.getElementById('svg-canvas');
+  svg.innerHTML='';
+  const revealed=new Set(compOrder.slice(0,revIdx+1));
+  const activeId=revIdx>=0?compOrder[revIdx]:null;
+  const defs=mkSvg('defs'); svg.appendChild(defs);
+
+  curQ.edges.forEach((edge,i)=>{
+    const pF=nodePos[edge.f],pT=nodePos[edge.t];
+    if(!pF||!pT)return;
+    const bothLit=revealed.has(edge.f)&&revealed.has(edge.t);
+    const isActive=bothLit&&(edge.f===activeId||edge.t===activeId);
+    const stroke=isActive?'#e8b454':bothLit?'#3dffa0':'#3d5270';
+    const op=isActive?1:bothLit?0.65:0.45;
+    const sw=isActive?2.2:bothLit?1.6:1.4;
+    const dash=bothLit?'none':'5,4';
+
+    const mkArr=(id,pts)=>{
+      const m=mkSvg('marker');
+      m.setAttribute('id',id);m.setAttribute('markerWidth','8');m.setAttribute('markerHeight','8');
+      m.setAttribute('refX',pts==='fwd'?'7':'1');m.setAttribute('refY','4');m.setAttribute('orient','auto');
+      const p=mkSvg('polygon');
+      p.setAttribute('points',pts==='fwd'?'0 0, 8 4, 0 8':'8 0, 0 4, 8 8');
+      p.setAttribute('fill',stroke);p.setAttribute('opacity',op);
+      m.appendChild(p);defs.appendChild(m);
+    };
+    mkArr('af'+i,'fwd');
+    if(edge.bi)mkArr('ab'+i,'bwd');
+
+    const x1=pF.x,y1=pF.y,x2=pT.x,y2=pT.y;
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1;
+    const r=46;
+    const sx1=x1+dx/len*r,sy1=y1+dy/len*r;
+    const sx2=x2-dx/len*r,sy2=y2-dy/len*r;
+    const mx=(sx1+sx2)/2,my=(sy1+sy2)/2;
+    const px=-dy/len*38,py=dx/len*38;
+    const cpx=mx+px,cpy=my+py;
+    const d=`M${sx1},${sy1} Q${cpx},${cpy} ${sx2},${sy2}`;
+
+    const path=mkSvg('path');
+    path.setAttribute('d',d);path.setAttribute('stroke',stroke);
+    path.setAttribute('stroke-width',sw);path.setAttribute('stroke-dasharray',dash);
+    path.setAttribute('fill','none');path.setAttribute('opacity',op);
+    path.setAttribute('marker-end','url(#af'+i+')');
+    if(edge.bi)path.setAttribute('marker-start','url(#ab'+i+')');
+    svg.appendChild(path);
+
+    if(bothLit){
+      // Speed: active edge is faster (1.4s), revealed non-active is slower (2.4s)
+      const dur = isActive ? 1.4 : 2.4;
+      // Color: active is bright, non-active is dimmer
+      const pColor = isActive ? '#e8b454' : '#4a8fa8';
+      addPacket(svg, d, pColor, 0, dur);
+      if(edge.bi){
+        // Reverse packet: go from t→f along the same path (keyPoints trick)
+        const rColor = isActive ? '#38d9f5' : '#4a6a8a';
+        addPacketReverse(svg, d, rColor, dur*0.5, dur);
+      }
+    }
+
+    if(edge.l){
+      const tw=edge.l.length*5.2+8;
+      const bg=mkSvg('rect');
+      bg.setAttribute('x',cpx-tw/2);bg.setAttribute('y',cpy-14);
+      bg.setAttribute('width',tw);bg.setAttribute('height',13);bg.setAttribute('rx',3);
+      bg.setAttribute('fill','#0a0c10');bg.setAttribute('opacity',bothLit?0.8:0);
+      svg.appendChild(bg);
+      const t=mkSvg('text');
+      t.setAttribute('x',cpx);t.setAttribute('y',cpy-4);
+      t.setAttribute('text-anchor','middle');t.setAttribute('font-size','9');
+      t.setAttribute('font-family','JetBrains Mono, monospace');
+      t.setAttribute('fill',isActive?'#e8b454':bothLit?'#3dffa0':'#3d4f68');
+      t.setAttribute('opacity',isActive?1:bothLit?0.8:0.4);
+      t.textContent=edge.l;
+      svg.appendChild(t);
+    }
+  });
+}
+
+function addPacket(svg,d,color,delay,dur){
+  dur = dur || 1.6;
+  const pid='pp'+Math.random().toString(36).slice(2,8);
+  const tp=mkSvg('path');
+  tp.setAttribute('id',pid);tp.setAttribute('d',d);
+  tp.setAttribute('fill','none');tp.setAttribute('stroke','none');
+  svg.appendChild(tp);
+  const circ=mkSvg('circle');
+  circ.setAttribute('r', dur < 2 ? '5' : '3.5');
+  circ.setAttribute('fill',color);
+  circ.setAttribute('opacity', dur < 2 ? '1' : '0.7');
+  // Glow effect for active packets
+  if(dur < 2){
+    const filter = mkSvg('filter');
+    const fid = 'glow'+Math.random().toString(36).slice(2,6);
+    filter.setAttribute('id',fid);
+    const feBlur = mkSvg('feGaussianBlur');
+    feBlur.setAttribute('stdDeviation','2');
+    feBlur.setAttribute('result','coloredBlur');
+    const feMerge = mkSvg('feMerge');
+    const feMergeNode1 = mkSvg('feMergeNode');
+    feMergeNode1.setAttribute('in','coloredBlur');
+    const feMergeNode2 = mkSvg('feMergeNode');
+    feMergeNode2.setAttribute('in','SourceGraphic');
+    feMerge.appendChild(feMergeNode1);
+    feMerge.appendChild(feMergeNode2);
+    filter.appendChild(feBlur);
+    filter.appendChild(feMerge);
+    svg.querySelector('defs').appendChild(filter);
+    circ.setAttribute('filter','url(#'+fid+')');
+  }
+  const am=mkSvg('animateMotion');
+  am.setAttribute('dur',dur+'s');
+  am.setAttribute('repeatCount','indefinite');
+  am.setAttribute('begin',delay+'s');
+  am.setAttribute('calcMode','linear');
+  const mp=mkSvg('mpath');mp.setAttribute('href','#'+pid);
+  am.appendChild(mp);circ.appendChild(am);svg.appendChild(circ);
+}
+
+// Reverse packet: travels the path from end to start (t→f direction)
+function addPacketReverse(svg,d,color,delay,dur){
+  dur = dur || 1.6;
+  const pid='pp'+Math.random().toString(36).slice(2,8);
+  const tp=mkSvg('path');
+  tp.setAttribute('id',pid);tp.setAttribute('d',d);
+  tp.setAttribute('fill','none');tp.setAttribute('stroke','none');
+  svg.appendChild(tp);
+  const circ=mkSvg('circle');
+  circ.setAttribute('r', dur < 2 ? '5' : '3.5');
+  circ.setAttribute('fill',color);
+  circ.setAttribute('opacity', dur < 2 ? '1' : '0.7');
+  const am=mkSvg('animateMotion');
+  am.setAttribute('dur',dur+'s');
+  am.setAttribute('repeatCount','indefinite');
+  am.setAttribute('begin',delay+'s');
+  am.setAttribute('calcMode','linear');
+  // keyPoints 1→0 with keyTimes 0→1 reverses the direction
+  am.setAttribute('keyPoints','1;0');
+  am.setAttribute('keyTimes','0;1');
+  const mp=mkSvg('mpath');mp.setAttribute('href','#'+pid);
+  am.appendChild(mp);circ.appendChild(am);svg.appendChild(circ);
+}
+
+// ── DETAIL PANEL ──
+function showDetail(cid){
+  const c=COMP[cid]; if(!c)return;
+  const conns=curQ.edges.filter(e=>e.f===cid||e.t===cid);
+  document.getElementById('rbody-detail').innerHTML=`
+<div class="dc">
+  <div class="dc-head">
+    <div class="dc-icon">${c.icon}</div>
+    <div><div class="dc-name">${c.name}</div><div class="dc-full">${c.full}</div><span class="dc-cat">${c.cat}</span></div>
+  </div>
+  <div class="dc-sec"><div class="dc-sec-t">Why We Use This</div><div class="dc-body">${c.why}</div></div>
+  <div class="dc-sec">
+    <div class="dc-sec-t">How It Works</div>
+    <div class="fsteps">${c.how.map((s,i)=>(i>0?'<div class="fstep-arrow">↓</div>':'')+`<div class="fstep"><b>${s.s}</b> → ${s.d}</div>`).join('')}</div>
+  </div>
+  <div class="dc-sec">
+    <div class="dc-sec-t">Trade-offs</div>
+    <div class="tg">
+      <div class="tgc tgg"><div class="tgc-t">Pros</div>${c.pros.map(p=>`<div class="tgi">${p}</div>`).join('')}</div>
+      <div class="tgc tgb"><div class="tgc-t">Cons</div>${c.cons.map(p=>`<div class="tgi">${p}</div>`).join('')}</div>
+    </div>
+  </div>
+  <div class="dc-sec"><div class="dc-sec-t">Alternatives</div><div class="alts-wrap">${c.alts.map(a=>`<span class="alt ${a.t==='oss'?'alt-oss':''}">${a.n}</span>`).join('')}</div></div>
+  <div class="dc-sec">
+    <div class="dc-sec-t">When to Use / Avoid</div>
+    <div class="ua ua-y"><div class="ua-l">Use When</div><div class="ua-t">${c.when}</div></div>
+    <div class="ua ua-n"><div class="ua-l">Avoid When</div><div class="ua-t">${c.avoid}</div></div>
+  </div>
+  <div class="dc-sec"><div class="dc-sec-t">Cost Reference</div><span class="cost-pill">💰 ${c.cost}</span></div>
+  ${conns.length?`<div class="dc-sec"><div class="dc-sec-t">Connections in This Architecture</div><div class="conn-list">${
+    conns.map(e=>{
+      const other=e.f===cid?e.t:e.f;
+      const oc=COMP[other];
+      const dir=e.bi?'↔':e.f===cid?'→':'←';
+      return `<div class="conn-item"><span class="conn-icon">${oc?oc.icon:'?'}</span><span class="conn-lbl">${oc?oc.name:other}</span><span class="conn-dir">${dir} ${e.l}</span></div>`;
+    }).join('')
+  }</div></div>`:''}
+</div>`;
+  switchTab('detail');
+}
+
+// ── WALKTHROUGH ──
+function buildWalkthrough(q){
+  document.getElementById('wt-wrap').innerHTML=q.steps.map((s,i)=>`
+    <div class="ws on" id="ws-${i}" onclick="toggleWs(${i})">
+      <div class="ws-head"><div class="ws-num">${i+1}</div><div class="ws-t">${s.title}</div><span style="font-size:.62rem;color:var(--faint);margin-left:auto">▸</span></div>
+      <div class="ws-body">${s.body}</div>
+    </div>`).join('');
+}
+function toggleWs(i){
+  const el=document.getElementById('ws-'+i);
+  el.classList.toggle('open');el.classList.add('done');
+  el.querySelector('.ws-head span:last-child').textContent=el.classList.contains('open')?'▾':'▸';
+}
+
+// ── TABS ──
+function switchTab(tab){
+  ['detail','walk'].forEach(t=>{
+    document.getElementById('rtab-'+t).classList.toggle('on',t===tab);
+    document.getElementById('rbody-'+t).style.display=t===tab?'block':'none';
+  });
+}
+
+// ── CONTROLS ──
+function resetQ(){if(!curQ)return;loadQ(curQ);toast('Canvas reset');}
+function revealAll(){
+  if(!curQ)return;
+  revIdx=compOrder.length-1;
+  compOrder.forEach(cid=>revealNode(cid));
+  const last=compOrder[revIdx];
+  setActive(last);showDetail(last);updateFlowStrip();redrawEdges();updateBadge();
+  toast('All components revealed');
+}
+function markComplete(){
+  if(!curQ)return;
+  completedSet.add(curQ.id);
+  const d=document.getElementById('qidone-'+curQ.id);
+  if(d)d.textContent='✓';
+  updateProgress();
+  document.getElementById('ov-title').textContent=curQ.name+' Complete!';
+  document.getElementById('ov-sub').textContent='You explored all '+curQ.components.length+' AWS components. Review the bidirectional arrows — they tell the data flow story.';
+  document.getElementById('overlay').classList.add('show');
+}
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+  const next=QS.find(q=>!completedSet.has(q.id));
+  if(next)loadQ(next);
+}
+function updateProgress(){
+  const n=completedSet.size;
+  document.getElementById('prog-txt').textContent=n+'/'+QS.length;
+  document.getElementById('prog-fill').style.width=(n/QS.length*100)+'%';
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+window.addEventListener('resize',()=>{if(curQ)redrawEdges();});
+
+// Init toggle position
+window.addEventListener('DOMContentLoaded',()=>{updateTogglePos();});
+</script>
+</body>
+</html>
